@@ -1,23 +1,31 @@
 {
   "name": "veritas",
-  "type": "module",
+  "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": ">=24.0.0 <27"
+  },
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "db:generate": "drizzle-kit generate"
+    "test": "vitest run",
+    "check": "pnpm test",
+    "format": "oxfmt -c oxfmt.config.ts .",
+    "format:check": "oxfmt -c oxfmt.config.ts --check .",
+    "lint": "oxlint -c oxlint.config.ts",
+    "lint:fix": "oxlint -c oxlint.config.ts --fix"
   },
   "dependencies": {
-    "@libsql/client": "^0.18.0",
-    "drizzle-orm": "^0.45.3",
-    "nuxt": "^4.5.2",
-    "vue": "^3.5.43",
-    "vue-router": "^5.3.1"
+    "nuxt": "4.5.2",
+    "vue": "3.5.42",
+    "zod": "4.5.4"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.11"
+    "@types/node": "24.13.3",
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3",
+    "vue-tsc": "3.3.11"
   }
 }

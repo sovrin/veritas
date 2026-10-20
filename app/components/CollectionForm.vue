@@ -1,0 +1,220 @@
+<script setup lang="ts">
+import { errorMessage } from '#nexitas/app/lib/format'
+import type { Collection, Field, FieldType } from '../../shared/contracts'
+import { FIELD_TYPES, fieldKey, slugify } from '../../shared/contracts'
+import { FIELD_META } from '../lib/fields'
+
+/** Adds a collection to a project, or changes one: its name and fields. A saved field keeps its key
+ *  and type, so what is stored always matches what the API promises. */
+const props = defineProps<{ projectId: string; collection?: Collection }>()
+const emit = defineEmits<{ saved: [Collection] }>()
+
+const name = ref(props.collection?.name ?? '')
+const slug = ref(props.collection?.slug ?? '')
+const slugTouched = ref(!!props.collection)
+// A new collection's slug follows its name until it is edited by hand.
+watch(name, (value) => {
+  if (!slugTouched.value) slug.value = slugify(value)
+})
+
+interface Row extends Field {
+  saved: boolean
+  keyTouched: boolean
+}
+const rows = ref<Row[]>(
+  props.collection?.fields.map((field) => ({ ...field, saved: true, keyTouched: true })) ?? [],
+)
+const types = Object.keys(FIELD_TYPES) as FieldType[]
+function addField() {
+  rows.value.push({ key: '', label: '', type: 'text', saved: false, keyTouched: false })
+}
+// A new field's key follows its label until it is edited by hand.
+function labelled(row: Row) {
+  if (!row.keyTouched) row.key = fieldKey(row.label)
+}
+
+const pending = ref(false)
+const error = ref('')
+const issues = ref<{ path: string; message: string }[]>([])
+const fieldError = (path: string) =>
+  issues.value.find((issue) => issue.path === path || issue.path.startsWith(`${path}.`))?.message
+
+async function save() {
+  pending.value = true
+  error.value = ''
+  issues.value = []
+  const settings = {
+    name: name.value,
+    fields: rows.value.map(({ key, label, type }) => ({ key: key.trim(), label, type })),
+  }
+  const base = `/api/content/${props.projectId}/collections`
+  try {
+    const saved = await $fetch<Collection>(
+      props.collection ? `${base}/${props.collection.slug}` : base,
+      { method: 'POST', body: props.collection ? settings : { ...settings, slug: slug.value } },
+    )
+    emit('saved', saved)
+  } catch (cause) {
+    const data = (cause as { data?: { data?: { issues?: typeof issues.value } } }).data?.data
+    if (data?.issues?.length) issues.value = data.issues
+    else error.value = errorMessage(cause)
+  } finally {
+    pending.value = false
+  }
+}
+</script>
+
+<template>
+  <form class="stack gap-5" @submit.prevent="save">
+    <fieldset :disabled="pending" class="stack gap-5">
+      <dl class="properties">
+        <dt><label for="name">Name</label></dt>
+        <dd class="field items-stretch">
+          <input
+            id="name"
+            v-model="name"
+            class="input"
+            data-size="s"
+            required
+            maxlength="60"
+            placeholder="Posts"
+            autocomplete="off"
+            :aria-invalid="!!fieldError('name') || undefined"
+          />
+          <span v-if="fieldError('name')" data-error>{{ fieldError('name') }}</span>
+        </dd>
+        <dt><label for="slug">Slug</label></dt>
+        <dd class="field items-stretch">
+          <input
+            id="slug"
+            v-model="slug"
+            class="input font-mono text-s"
+            data-size="s"
+            required
+            maxlength="64"
+            autocomplete="off"
+            spellcheck="false"
+            :readonly="!!collection"
+            :aria-invalid="!!fieldError('slug') || undefined"
+            aria-describedby="slug-help"
+            @input="slugTouched = true"
+          />
+          <small id="slug-help">{{
+            collection
+              ? 'Fixed: the API addresses the collection by it.'
+              : 'Part of the API address. It cannot change later.'
+          }}</small>
+          <span v-if="fieldError('slug')" data-error>{{ fieldError('slug') }}</span>
+        </dd>
+      </dl>
+
+      <section class="stack gap-3" aria-labelledby="fields-title">
+        <h2 id="fields-title" class="text-s weight-600">Fields</h2>
+        <p class="text-s text-muted">
+          Every entry has a title and a slug; these come on top. A saved field keeps its key and
+          type.
+        </p>
+        <ul v-if="rows.length" data-variant="plain" class="stack gap-3" aria-label="Fields">
+          <li v-for="(row, index) in rows" :key="index" class="stack gap-2 py-3 hairline-b">
+            <div class="cluster gap-3 flex-nowrap items-start">
+              <div class="field flex-1 min-w-0">
+                <label :for="`label-${index}`">Label</label>
+                <input
+                  :id="`label-${index}`"
+                  v-model="row.label"
+                  class="input"
+                  data-size="s"
+                  required
+                  maxlength="60"
+                  placeholder="Hero image"
+                  autocomplete="off"
+                  :aria-invalid="!!fieldError(`fields.${index}.label`) || undefined"
+                  @input="labelled(row)"
+                />
+              </div>
+              <div class="field flex-1 min-w-0">
+                <label :for="`key-${index}`">Key</label>
+                <input
+                  :id="`key-${index}`"
+                  v-model="row.key"
+                  class="input font-mono text-s"
+                  data-size="s"
+                  required
+                  maxlength="40"
+                  autocomplete="off"
+                  spellcheck="false"
+                  :readonly="row.saved"
+                  :aria-invalid="!!fieldError(`fields.${index}.key`) || undefined"
+                  @input="row.keyTouched = true"
+                />
+              </div>
+              <div class="field">
+                <label :for="`type-${index}`">Type</label>
+                <select
+                  :id="`type-${index}`"
+                  v-model="row.type"
+                  class="input"
+                  data-size="s"
+                  :disabled="row.saved"
+                >
+                  <option v-for="type in types" :key="type" :value="type">
+                    {{ FIELD_TYPES[type] }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="cluster justify-between gap-3">
+              <small class="text-muted cluster gap-1 flex-nowrap"
+                ><i class="icon" :data-icon="FIELD_META[row.type].icon" data-size="s"></i
+                >{{ FIELD_META[row.type].hint }}</small
+              >
+              <button type="button" class="link text-s text-danger" @click="rows.splice(index, 1)">
+                Remove
+              </button>
+            </div>
+            <span v-if="fieldError(`fields.${index}`)" data-error class="text-danger text-s">{{
+              fieldError(`fields.${index}`)
+            }}</span>
+          </li>
+        </ul>
+        <p>
+          <button type="button" class="link text-s" @click="addField">Add a field</button>
+        </p>
+        <span v-if="fieldError('fields') && !rows.length" data-error class="text-danger text-s">{{
+          fieldError('fields')
+        }}</span>
+      </section>
+    </fieldset>
+
+    <div v-if="issues.length || error" class="alert" data-tone="danger" role="alert">
+      <div>
+        <template v-if="error"
+          ><strong>Could not save the collection.</strong> {{ error }}</template
+        >
+        <template v-else>
+          <strong>Check these settings.</strong>
+          <ul>
+            <li v-for="issue in issues" :key="issue.path">
+              <span class="font-mono">{{ issue.path }}</span
+              >: {{ issue.message }}
+            </li>
+          </ul>
+        </template>
+      </div>
+    </div>
+
+    <div class="cluster gap-3 hairline-t pt-5">
+      <p class="caption">Removing a field stops the API delivering it.</p>
+      <button
+        type="submit"
+        class="btn end"
+        data-size="s"
+        data-variant="primary"
+        :disabled="pending"
+        :aria-busy="pending || undefined"
+      >
+        {{ collection ? 'Save changes' : 'Add collection' }}
+      </button>
+    </div>
+  </form>
+</template>

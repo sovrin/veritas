@@ -1,65 +1,63 @@
 # veritas
 
-A very simple headless CMS. Model your content in collections, write entries in the admin, read them anywhere through a JSON API.
+A very simple headless CMS. Model your content in collections, write entries, read them anywhere
+through a JSON API.
 
-- **Projects** are separate spaces, one per site or app. Each has its own collections, entries and API token.
-- **Collections** are kinds of content (Posts, Pages, Team members). Each defines the fields its entries have.
-- **Entries** always have a title and a slug, plus the collection's fields. They are drafts until published.
-- **Storage** is SQLite through [Drizzle](https://orm.drizzle.team): a single file, `.data/veritas.db`, by default.
+**veritas is a module for [nexitas](https://github.com/sovrin/nexitas), not an app of its own.** It
+ships inside nexitas, which builds it in from its `modules.json`, and an install's owner switches
+it on as Content. To use it, install nexitas. nexitas brings the sign-in, the page shell, the
+database and the projects (each site's name and origins); veritas adds:
 
-## Run it
+- **content per project**: a project's collections, their entries, and a read token for its sites;
+- the admin pages under Content: collections, entries, their fields and the API;
+- a Content panel on each project's page: start its content, see how much is published;
+- the delivery API, read by sites, apps and build steps.
 
-```bash
-(cd ../aequitas && pnpm build)
-cp .env.example .env   # then set NUXT_ADMIN_PASSWORD
-npm install
-npm run dev
+## How it fits together
+
+```
+site or build ── GET /v1/content/<project>                     → its collections and fields
+               ── GET /v1/content/<project>/<collection>        → published entries, newest first
+               ── GET /v1/content/<project>/<collection>/<slug> → one published entry
+owner         ── /content                                       every project's content (signed in)
+               ── /content/<project>                             collections, the token and API
+               ── /content/<project>/<collection>               entries; Fields; New entry
 ```
 
-Sign in at <http://localhost:3000>. The database is created and migrated on first use.
-
-## Using the admin
-
-Laid out like PocketBase: collections on the left, the open collection as a table (one row per entry, one column per
-field), and a panel that slides in over the table to edit. You land in the project you used last.
-
-| To | Do |
-| --- | --- |
-| Add a collection | *New collection* under the collections in the sidebar. Name it, add fields by type. |
-| Change a collection's fields | The gear next to its name. |
-| Write an entry | *New entry*, top right. |
-| Edit an entry | Click its row. Esc or a click beside the panel closes it (it asks first if you have unsaved changes). |
-| See what the API returns | *API preview*, top right, for the collection; the *API preview* tab in an entry for that entry. |
-| Get the API token | *API & settings* at the bottom of the sidebar. |
-| Switch or add projects | The project name at the top of the sidebar. |
+- **Collections** are kinds of content (Posts, Pages, Team members). Each defines the fields its
+  entries have.
+- **Entries** always have a title and a slug, plus the collection's fields. They are drafts until
+  published.
 
 ### Field types
 
-| Type | Delivered as |
-| --- | --- |
-| Text | string |
+| Type     | Delivered as                                        |
+| -------- | --------------------------------------------------- |
+| Text     | string                                              |
 | Markdown | string, as written; rendering is the consumer's job |
-| Number | number or `null` |
-| Yes / no | boolean |
-| Date | `"YYYY-MM-DD"` or `""` |
+| Number   | number or `null`                                    |
+| Yes / no | boolean                                             |
+| Date     | `"YYYY-MM-DD"` or `""`                              |
 
-A field's key (camelCase, like `heroImage`) is the name the API uses. Key and type are fixed once saved, so stored
-values always match what the API promises. Removing a field stops it being delivered.
+A field's key (camelCase, like `heroImage`) is the name the API uses. Key and type are fixed once
+saved, so stored values always match what the API promises. Removing a field stops it being
+delivered. Collection and entry slugs are `a–z`, `0–9` and dashes; they are addresses, so they
+never change.
 
 ## Delivery API
 
-Read-only. Only published entries. Every request needs the project's token.
-Any origin may call it (CORS `*`).
+Read-only. Only published entries. Every request needs the project's token, which its Content page
+shows (and can replace). Any origin may call it.
 
 ```bash
-curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/<project>/<collection>
+curl -H "Authorization: Bearer $TOKEN" https://nexitas.example.com/v1/content/<project>/<collection>
 ```
 
-| Request | Returns |
-| --- | --- |
-| `GET /api/v1/:project` | `{ slug, name, collections: [{ slug, name, fields: [{ key, type }], entries }] }` |
-| `GET /api/v1/:project/:collection` | Published entries, newest first |
-| `GET /api/v1/:project/:collection/:slug` | One entry |
+| Request                                      | Returns                                                                           |
+| -------------------------------------------- | --------------------------------------------------------------------------------- |
+| `GET /v1/content/:project`                   | `{ slug, name, collections: [{ slug, name, fields: [{ key, type }], entries }] }` |
+| `GET /v1/content/:project/:collection`       | Published entries, newest first                                                   |
+| `GET /v1/content/:project/:collection/:slug` | One entry                                                                         |
 
 An entry is flat: its slug and title, then one key per field, then when it last changed.
 
@@ -67,60 +65,65 @@ An entry is flat: its slug and title, then one key per field, then when it last 
 {
   "slug": "hello-world",
   "title": "Hello, world",
-  "excerpt": "The first post.",
   "body": "# Hi\n\nFirst post.",
-  "publishedOn": "2026-10-06",
+  "publishedOn": "2026-10-21",
   "featured": true,
-  "updatedAt": "2026-10-06T13:47:29.294Z"
+  "updatedAt": "2026-10-21T13:47:29.294Z"
 }
 ```
 
-`401` means the token is wrong or the project doesn't exist. `404` means the entry doesn't exist or isn't published.
+`401` means the token is wrong or the project has no content. `404` means the collection or entry
+doesn't exist or isn't published. While Content is switched off, every route answers `404`.
 
 ## Admin API
 
-The admin UI uses it, and so can scripts holding a session cookie (`POST /api/session` with `{ "password": "…" }`).
-All paths start with `/api/admin/projects`.
+The admin pages use it, under the owner's session; writes come from nexitas' own origin, like every
+`/api` route. All paths start with `/api/content`.
 
-| Request | Does |
-| --- | --- |
-| `GET · POST /` | List projects · create one `{ name, slug }` |
-| `GET · PATCH · DELETE /:project` | Read · rename `{ name }` or replace the token `{ rotateToken: true }` · delete with everything in it |
-| `GET · POST /:project/collections` | List collections (with entry counts) · create one `{ name, slug, fields: [{ key, label, type }] }` |
-| `GET · PUT · DELETE /:project/collections/:collection` | Read · replace name and fields · delete with its entries |
-| `GET · POST /:project/collections/:collection/entries` | List entries (without fields) · create one `{ slug, title, fields, published }` |
-| `GET · PUT · DELETE /:project/collections/:collection/entries/:slug` | Read · replace `{ title, fields, published }` · delete |
+| Request                                                          | Does                                                     |
+| ---------------------------------------------------------------- | -------------------------------------------------------- |
+| `GET · POST /`                                                   | Projects with content · start it for one `{ projectId }` |
+| `GET /:project` · `POST /:project/token`                         | Its token and collections · replace the token            |
+| `POST /:project/collections`                                     | Add one `{ slug, name, fields: [{ key, label, type }] }` |
+| `GET · POST /:project/collections/:collection` · `POST …/delete` | Read with entries · replace name and fields · delete     |
+| `POST /:project/collections/:collection/entries`                 | Add one `{ slug, title, fields, published }`             |
+| `GET · POST …/entries/:slug` · `POST …/entries/:slug/delete`     | Read · replace `{ title, fields, published }` · delete   |
 
-Slugs are `a–z`, `0–9` and dashes. They are addresses, so they never change.
+Deleting a project in nexitas deletes its content with it.
 
-## Database
+## Develop
 
-The schema is [server/db/schema.ts](server/db/schema.ts): `projects` → `collections` → `entries`, with deletes cascading
-down. After changing it, generate a migration and commit it:
+veritas has no app, build or image of its own: it runs inside nexitas. Check out nexitas, aequitas
+and veritas next to each other, build aequitas once (`cd ../aequitas && pnpm install && pnpm build`),
+and put this checkout into nexitas' modules:
 
-```bash
-npm run db:generate
+```sh
+pnpm install
+ln -s ../../veritas ../nexitas/.modules/veritas
+cd ../nexitas && node scripts/modules.ts && pnpm install && pnpm dev
 ```
 
-Migrations in `server/db/migrations` run automatically on startup, read relative to the working directory.
+`node scripts/modules.ts` fetches the other modules nexitas lists and leaves the symlink to this
+checkout as it is. Open http://localhost:3000, create the owner with the key in nexitas'
+`.data/bootstrap-token`, and switch Content on, at setup or under Modules. The typecheck of the pages
+and server runs in nexitas (`pnpm check` there); here `pnpm check` runs the unit tests.
 
-## Deployment
+## In an install
 
-| Variable | Effect |
-| --- | --- |
-| `NUXT_ADMIN_PASSWORD` | The one admin password. Unset, nobody can sign in. Changing it signs everyone out. |
-| `NUXT_DB_URL` | Default `file:.data/veritas.db`. A `libsql://` or `https://` URL uses a libsql server or Turso instead. |
-| `NUXT_DB_TOKEN` | Auth token for a remote database. |
-| `NUXT_TRUST_PROXY` | `true` to rate-limit sign-in by `X-Forwarded-For`. Set it only behind a proxy that overwrites that header. |
+veritas runs wherever nexitas does: see nexitas' README for Compose, the proxy and the settings.
+Content is the owner's own, so it is kept until they delete it. Off (under Modules), its pages and
+both APIs answer 404; its content is kept.
 
-With the default file database, keep `.data/` on a volume and start the server from the project directory.
+## Not here yet
 
-## Not in the PoC
+Users and roles, media uploads, references between entries, single-entry collections (a homepage),
+versions, search in the API, pagination, webhooks.
 
-Users and roles, media uploads, references between entries, single-entry collections (a homepage), versions,
-search in the API, pagination, webhooks.
+## Checks
 
-## UI
-
-Styled with [aequitas](../aequitas), consumed from its built `dist/` in the sibling checkout.
-Build it once before running this app, or point `AEQUITAS_DIST` at another `dist/` directory.
+```sh
+pnpm check         # the unit tests
+pnpm lint
+pnpm format:check
+node ../aequitas/dist/aequitas-check.mjs --css ../nexitas/app/assets/nexitas.css app/**/*.vue
+```
