@@ -6,13 +6,12 @@ import type { Collection } from '../../../../../../shared/contracts'
 const route = useRoute()
 const project = useProject().id.value
 const slug = route.params.collection as string
-useHead({ title: `${slug} fields · ${project}` })
 // Not live: the form is keyed by what it shows, so a refresh would reset what is being typed.
 const {
   data: collection,
   error,
   refresh,
-} = await useFetch<Collection>(`/api/p/${project}/content/collections/${slug}`)
+} = await useProjectFetch<Collection>(`/content/collections/${slug}`, { live: false })
 
 const savedNotice = ref(false)
 async function saved() {
@@ -20,7 +19,6 @@ async function saved() {
   savedNotice.value = true
 }
 
-const deleteOpen = ref(false)
 const deleteError = ref('')
 async function remove() {
   deleteError.value = ''
@@ -37,40 +35,29 @@ async function remove() {
 </script>
 
 <template>
-  <div class="stack gap-5">
-    <nav aria-label="Breadcrumb">
-      <ol class="breadcrumb">
-        <li><NuxtLink :to="`/p/${project}/content`">Content</NuxtLink></li>
-        <li>
-          <NuxtLink :to="`/p/${project}/content/${slug}`">{{ collection?.name ?? slug }}</NuxtLink>
-        </li>
-        <li aria-current="page">Fields</li>
-      </ol>
-    </nav>
-
-    <div v-if="error" class="alert" data-tone="danger" role="alert">
-      <div><strong>Could not load this collection.</strong> {{ errorMessage(error) }}</div>
-    </div>
-    <template v-else-if="collection">
-      <div class="page-header">
-        <h1 class="text-xl weight-600">{{ collection.name }}</h1>
-        <button
-          type="button"
-          class="btn"
-          data-size="s"
-          data-variant="ghost"
-          data-tone="danger"
-          @click="deleteOpen = true"
-        >
-          Delete collection
-        </button>
-      </div>
-      <div v-if="deleteError" class="alert" data-tone="danger" role="alert">
-        <div><strong>Could not delete the collection.</strong> {{ deleteError }}</div>
-      </div>
-      <div v-if="savedNotice" class="alert" data-tone="success" role="status">
-        <div><strong>Saved.</strong> The API delivers the new fields from now on.</div>
-      </div>
+  <AppPage
+    title="Fields"
+    :trail="[{ label: collection?.name ?? slug, to: `/p/${project}/content/${slug}` }]"
+    failed="Could not load this collection."
+    :error="error"
+  >
+    <template v-if="collection" #actions>
+      <DangerAction
+        label="Delete collection"
+        :title="`Delete ${slug} and its entries?`"
+        :confirm-word="slug"
+        @confirm="remove"
+      >
+        Removes the collection and every entry in it. This cannot be undone.
+      </DangerAction>
+    </template>
+    <template v-if="collection">
+      <AppAlert v-if="deleteError" title="Could not delete the collection.">{{
+        deleteError
+      }}</AppAlert>
+      <AppAlert v-if="savedNotice" tone="success" title="Saved."
+        >The API delivers the new fields from now on.</AppAlert
+      >
       <!-- A form reads best at a line's length, however wide the window. -->
       <div class="measure">
         <CollectionForm
@@ -81,18 +68,5 @@ async function remove() {
         />
       </div>
     </template>
-
-    <ConfirmDialog
-      v-model:open="deleteOpen"
-      :title="`Delete ${slug} and its entries?`"
-      confirm-label="Delete collection"
-      tone="danger"
-      :confirm-word="slug"
-      @confirm="remove"
-    >
-      <template #description
-        >Removes the collection and every entry in it. This cannot be undone.</template
-      >
-    </ConfirmDialog>
-  </div>
+  </AppPage>
 </template>

@@ -92,8 +92,7 @@ async function save() {
         <span v-if="fieldError('slug')" data-error>{{ fieldError('slug') }}</span>
       </div>
 
-      <section class="stack gap-3" aria-labelledby="fields-title">
-        <h2 id="fields-title" class="text-s weight-600 hairline-b pb-2">Fields</h2>
+      <AppSection title="Fields">
         <p class="text-s text-muted">
           Every entry has a title and a slug; these come on top. A saved field keeps its key and
           type.
@@ -172,7 +171,7 @@ async function save() {
         <span v-if="fieldError('fields') && !rows.length" data-error>{{
           fieldError('fields')
         }}</span>
-      </section>
+      </AppSection>
     </fieldset>
 
     <FormIssues :error="error" :issues="issues" failed="Could not save the collection." />

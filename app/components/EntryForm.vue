@@ -59,7 +59,7 @@ async function save() {
 
 <template>
   <!-- The preview lives here, not in the page, so it follows the form's values as they are typed. -->
-  <div class="with-aside">
+  <AsideLayout>
     <form class="stack gap-5 min-w-0" @submit.prevent="save">
       <fieldset :disabled="pending" class="stack gap-4">
         <div class="field">
@@ -159,9 +159,10 @@ async function save() {
       </div>
     </form>
 
-    <aside class="stack gap-3" aria-labelledby="delivered-title">
-      <h2 id="delivered-title" class="text-s weight-600 hairline-b pb-2">As the API delivers it</h2>
-      <pre class="snippet font-mono text-xs"><code>{{ delivered }}</code></pre>
-    </aside>
-  </div>
+    <template #aside>
+      <AppSection title="As the API delivers it">
+        <pre class="snippet font-mono text-xs"><code>{{ delivered }}</code></pre>
+      </AppSection>
+    </template>
+  </AsideLayout>
 </template>

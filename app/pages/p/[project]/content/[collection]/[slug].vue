@@ -7,11 +7,13 @@ const route = useRoute()
 const project = useProject().id.value
 const slug = route.params.collection as string
 const entrySlug = route.params.slug as string
-useHead({ title: `${entrySlug} · ${project}` })
-const base = `/api/p/${project}/content/collections/${slug}`
+const path = `/content/collections/${slug}`
 // Not live: the form is keyed by the entry's save, so a refresh would reset what is being typed.
 const [{ data: collection, error: collectionError }, { data: entry, error, refresh }] =
-  await Promise.all([useFetch<Collection>(base), useFetch<Entry>(`${base}/entries/${entrySlug}`)])
+  await Promise.all([
+    useProjectFetch<Collection>(path, { live: false }),
+    useProjectFetch<Entry>(`${path}/entries/${entrySlug}`, { live: false }),
+  ])
 
 const savedNotice = ref(false)
 async function saved() {
@@ -19,12 +21,14 @@ async function saved() {
   savedNotice.value = true
 }
 
-const deleteOpen = ref(false)
 const deleteError = ref('')
 async function remove() {
   deleteError.value = ''
   try {
-    await $fetch(`${base}/entries/${entrySlug}/delete`, { method: 'POST', body: {} })
+    await $fetch(`/api/p/${project}${path}/entries/${entrySlug}/delete`, {
+      method: 'POST',
+      body: {},
+    })
     await navigateTo(`/p/${project}/content/${slug}`)
   } catch (cause) {
     deleteError.value = errorMessage(cause)
@@ -33,50 +37,25 @@ async function remove() {
 </script>
 
 <template>
-  <div class="stack gap-5">
-    <nav aria-label="Breadcrumb">
-      <ol class="breadcrumb">
-        <li><NuxtLink :to="`/p/${project}/content`">Content</NuxtLink></li>
-        <li>
-          <NuxtLink :to="`/p/${project}/content/${slug}`">{{ collection?.name ?? slug }}</NuxtLink>
-        </li>
-        <li aria-current="page" class="font-mono">{{ entrySlug }}</li>
-      </ol>
-    </nav>
-
-    <div v-if="error || collectionError" class="alert" data-tone="danger" role="alert">
-      <div>
-        <strong>Could not load this entry.</strong> {{ errorMessage(error || collectionError) }}
-      </div>
-    </div>
-    <template v-else-if="entry && collection">
-      <div class="page-header">
-        <div class="stack gap-1 min-w-0">
-          <h1 class="text-xl weight-600 break-words">{{ entry.title }}</h1>
-          <p class="text-s text-muted">
-            {{ entry.published ? 'Published' : 'Draft' }} · saved {{ formatTime(entry.updatedAt) }}
-          </p>
-        </div>
-        <button
-          type="button"
-          class="btn"
-          data-size="s"
-          data-variant="ghost"
-          data-tone="danger"
-          @click="deleteOpen = true"
-        >
-          Delete entry
-        </button>
-      </div>
-      <div v-if="deleteError" class="alert" data-tone="danger" role="alert">
-        <div><strong>Could not delete the entry.</strong> {{ deleteError }}</div>
-      </div>
-      <div v-if="savedNotice" class="alert" data-tone="success" role="status">
-        <div>
-          <strong>Saved.</strong>
-          {{ entry.published ? 'The API delivers it as the preview shows.' : 'It stays a draft.' }}
-        </div>
-      </div>
+  <AppPage
+    :title="entry?.title ?? entrySlug"
+    :trail="[{ label: collection?.name ?? slug, to: `/p/${project}/content/${slug}` }]"
+    failed="Could not load this entry."
+    :error="error || collectionError"
+  >
+    <template v-if="entry" #subtitle>
+      {{ entry.published ? 'Published' : 'Draft' }} · saved {{ formatTime(entry.updatedAt) }}
+    </template>
+    <template v-if="entry && collection" #actions>
+      <DangerAction label="Delete entry" :title="`Delete ${entrySlug}?`" @confirm="remove">
+        This cannot be undone.
+      </DangerAction>
+    </template>
+    <template v-if="entry && collection">
+      <AppAlert v-if="deleteError" title="Could not delete the entry.">{{ deleteError }}</AppAlert>
+      <AppAlert v-if="savedNotice" tone="success" title="Saved.">{{
+        entry.published ? 'The API delivers it as the preview shows.' : 'It stays a draft.'
+      }}</AppAlert>
       <EntryForm
         :key="entry.updatedAt"
         :project-id="project"
@@ -85,15 +64,5 @@ async function remove() {
         @saved="saved"
       />
     </template>
-
-    <ConfirmDialog
-      v-model:open="deleteOpen"
-      :title="`Delete ${entrySlug}?`"
-      confirm-label="Delete entry"
-      tone="danger"
-      @confirm="remove"
-    >
-      <template #description>This cannot be undone.</template>
-    </ConfirmDialog>
-  </div>
+  </AppPage>
 </template>
