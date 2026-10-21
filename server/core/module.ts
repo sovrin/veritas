@@ -1,9 +1,9 @@
 // veritas as a nexitas module: its schema, the read-only delivery API sites and build steps call,
-// and its part of the status line. The owner's sign-in, the /api guard and the projects are the
+// and what it says about a project. The owner's sign-in, the /api guard and the projects are the
 // core's.
 import type { H3Event } from 'h3'
 import type { NexitasModule } from '#nexitas/shared/modules'
-import { countDrafts, deleteSpace, getSpace, listCollections } from './content'
+import { deleteSpace, getSpace, listCollections } from './content'
 
 export const veritas: NexitasModule = {
   id: 'veritas',
@@ -37,22 +37,17 @@ export const veritas: NexitasModule = {
   paths: ['/content', '/api/content'],
   // An entry is mostly text; a long one can pass 64 kB.
   maxBody: 1024 * 1024,
-  status: (db) => {
-    const drafts = countDrafts(db)
-    return drafts
-      ? [{ text: `${drafts} ${drafts === 1 ? 'draft' : 'drafts'}`, to: '/content' }]
-      : []
-  },
   projectStatus: (db, projectId) => {
     if (!getSpace(db, projectId)) return []
     const collections = listCollections(db, projectId)
     const published = collections.reduce((sum, collection) => sum + collection.published, 0)
+    const entries = collections.reduce((sum, collection) => sum + collection.entries, 0)
     return [
       {
         text: `${collections.length} ${collections.length === 1 ? 'collection' : 'collections'}`,
-        to: `/content/${projectId}`,
+        to: `/p/${projectId}/content`,
       },
-      { text: `${published} published` },
+      { text: `${published} of ${entries} published` },
     ]
   },
   deleteProject: (db, projectId) => deleteSpace(db, projectId),

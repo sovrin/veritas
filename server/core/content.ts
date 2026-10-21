@@ -48,32 +48,6 @@ export function deleteSpace(db: DatabaseSync, projectId: string) {
   db.prepare('DELETE FROM content_projects WHERE project_id = ?').run(projectId)
 }
 
-/** Every project with content, by name, with how much each holds. */
-export function listSpaces(db: DatabaseSync) {
-  return db
-    .prepare(
-      `SELECT p.id AS projectId, p.name AS name,
-        (SELECT COUNT(*) FROM collections c WHERE c.project_id = p.id) AS collections,
-        (SELECT COUNT(*) FROM entries e WHERE e.project_id = p.id) AS entries,
-        (SELECT COUNT(*) FROM entries e WHERE e.project_id = p.id AND e.published) AS published
-      FROM content_projects s JOIN projects p ON p.id = s.project_id ORDER BY p.name, p.id`,
-    )
-    .all() as unknown as {
-    projectId: string
-    name: string
-    collections: number
-    entries: number
-    published: number
-  }[]
-}
-
-/** Drafts across every project, for the status line. */
-export function countDrafts(db: DatabaseSync) {
-  return (
-    db.prepare('SELECT COUNT(*) AS n FROM entries WHERE NOT published').get() as { n: number }
-  ).n
-}
-
 // ── Collections
 
 interface CollectionRow {

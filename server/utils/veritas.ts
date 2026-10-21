@@ -2,6 +2,7 @@ import type { H3Event } from 'h3'
 import { tokensMatch } from '#nexitas/server/core/auth'
 import { getProject } from '#nexitas/server/core/projects'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
+import { requestProject } from '#nexitas/server/utils/projects'
 import { isSlug } from '../../shared/contracts'
 import { getCollection, getEntry, getSpace } from '../core/content'
 
@@ -12,13 +13,12 @@ function slugParam(event: H3Event, name: string) {
   return value
 }
 
-/** The project named in the route, with its content, or a 404. */
-export function routeSpace(event: H3Event) {
-  const db = nexitasDatabase()
-  const project = getProject(db, getRouterParam(event, 'project') ?? '')
-  const space = project && getSpace(db, project.id)
-  if (!project || !space)
-    throw createError({ statusCode: 404, statusMessage: 'This project has no content.' })
+/** The request's project with its content, or a 404: the panel and the content page read that as
+ *  not started yet. */
+export function projectSpace(event: H3Event) {
+  const project = requestProject(event)
+  const space = getSpace(nexitasDatabase(), project.id)
+  if (!space) throw createError({ statusCode: 404, statusMessage: 'This project has no content.' })
   return { project, token: space.token }
 }
 

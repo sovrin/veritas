@@ -47,7 +47,7 @@ async function save() {
     name: name.value,
     fields: rows.value.map(({ key, label, type }) => ({ key: key.trim(), label, type })),
   }
-  const base = `/api/content/${props.projectId}/collections`
+  const base = `/api/p/${props.projectId}/content/collections`
   try {
     const saved = await $fetch<Collection>(
       props.collection ? `${base}/${props.collection.slug}` : base,
@@ -67,49 +67,47 @@ async function save() {
 <template>
   <form class="stack gap-5" @submit.prevent="save">
     <fieldset :disabled="pending" class="stack gap-5">
-      <dl class="properties">
-        <dt><label for="name">Name</label></dt>
-        <dd class="field items-stretch">
-          <input
-            id="name"
-            v-model="name"
-            class="input"
-            data-size="s"
-            required
-            maxlength="60"
-            placeholder="Posts"
-            autocomplete="off"
-            :aria-invalid="!!fieldError('name') || undefined"
-          />
-          <span v-if="fieldError('name')" data-error>{{ fieldError('name') }}</span>
-        </dd>
-        <dt><label for="slug">Slug</label></dt>
-        <dd class="field items-stretch">
-          <input
-            id="slug"
-            v-model="slug"
-            class="input font-mono text-s"
-            data-size="s"
-            required
-            maxlength="64"
-            autocomplete="off"
-            spellcheck="false"
-            :readonly="!!collection"
-            :aria-invalid="!!fieldError('slug') || undefined"
-            aria-describedby="slug-help"
-            @input="slugTouched = true"
-          />
-          <small id="slug-help">{{
-            collection
-              ? 'Fixed: the API addresses the collection by it.'
-              : 'Part of the API address. It cannot change later.'
-          }}</small>
-          <span v-if="fieldError('slug')" data-error>{{ fieldError('slug') }}</span>
-        </dd>
-      </dl>
+      <div class="field">
+        <label for="name">Name</label>
+        <input
+          id="name"
+          v-model="name"
+          class="input"
+          data-size="s"
+          required
+          maxlength="60"
+          placeholder="Posts"
+          autocomplete="off"
+          :aria-invalid="!!fieldError('name') || undefined"
+        />
+        <span v-if="fieldError('name')" data-error>{{ fieldError('name') }}</span>
+      </div>
+      <div class="field">
+        <label for="slug">Slug</label>
+        <input
+          id="slug"
+          v-model="slug"
+          class="input font-mono text-s"
+          data-size="s"
+          required
+          maxlength="64"
+          autocomplete="off"
+          spellcheck="false"
+          :readonly="!!collection"
+          :aria-invalid="!!fieldError('slug') || undefined"
+          aria-describedby="slug-help"
+          @input="slugTouched = true"
+        />
+        <small id="slug-help">{{
+          collection
+            ? 'Fixed: the API addresses the collection by it.'
+            : 'Part of the API address. It cannot change later.'
+        }}</small>
+        <span v-if="fieldError('slug')" data-error>{{ fieldError('slug') }}</span>
+      </div>
 
       <section class="stack gap-3" aria-labelledby="fields-title">
-        <h2 id="fields-title" class="text-s weight-600">Fields</h2>
+        <h2 id="fields-title" class="text-s weight-600 hairline-b pb-2">Fields</h2>
         <p class="text-s text-muted">
           Every entry has a title and a slug; these come on top. A saved field keeps its key and
           type.
@@ -203,7 +201,7 @@ async function save() {
       </div>
     </div>
 
-    <div class="cluster gap-3 hairline-t pt-5">
+    <div class="cluster gap-3">
       <p class="caption">Removing a field stops the API delivering it.</p>
       <button
         type="submit"

@@ -19,9 +19,8 @@ database and the projects (each site's name and origins); veritas adds:
 site or build ── GET /v1/content/<project>                     → its collections and fields
                ── GET /v1/content/<project>/<collection>        → published entries, newest first
                ── GET /v1/content/<project>/<collection>/<slug> → one published entry
-owner         ── /content                                       every project's content (signed in)
-               ── /content/<project>                             collections, the token and API
-               ── /content/<project>/<collection>               entries; Fields; New entry
+owner         ── /p/<project>/content                           collections, the token and API
+               ── /p/<project>/content/<collection>             entries; Fields; New entry
 ```
 
 - **Collections** are kinds of content (Posts, Pages, Team members). Each defines the fields its
@@ -78,16 +77,17 @@ doesn't exist or isn't published. While Content is switched off, every route ans
 ## Admin API
 
 The admin pages use it, under the owner's session; writes come from nexitas' own origin, like every
-`/api` route. All paths start with `/api/content`.
+`/api` route. All paths start with `/api/p/:project/content`, the project's own; another project's
+collections and entries are not found there.
 
-| Request                                                          | Does                                                     |
-| ---------------------------------------------------------------- | -------------------------------------------------------- |
-| `GET · POST /`                                                   | Projects with content · start it for one `{ projectId }` |
-| `GET /:project` · `POST /:project/token`                         | Its token and collections · replace the token            |
-| `POST /:project/collections`                                     | Add one `{ slug, name, fields: [{ key, label, type }] }` |
-| `GET · POST /:project/collections/:collection` · `POST …/delete` | Read with entries · replace name and fields · delete     |
-| `POST /:project/collections/:collection/entries`                 | Add one `{ slug, title, fields, published }`             |
-| `GET · POST …/entries/:slug` · `POST …/entries/:slug/delete`     | Read · replace `{ title, fields, published }` · delete   |
+| Request                                                      | Does                                                      |
+| ------------------------------------------------------------ | --------------------------------------------------------- |
+| `GET · POST /`                                               | Its token and collections, `404` before it starts · start |
+| `POST /token`                                                | Replace the token                                         |
+| `POST /collections`                                          | Add one `{ slug, name, fields: [{ key, label, type }] }`  |
+| `GET · POST /collections/:collection` · `POST …/delete`      | Read with entries · replace name and fields · delete      |
+| `POST /collections/:collection/entries`                      | Add one `{ slug, title, fields, published }`              |
+| `GET · POST …/entries/:slug` · `POST …/entries/:slug/delete` | Read · replace `{ title, fields, published }` · delete    |
 
 Deleting a project in nexitas deletes its content with it.
 

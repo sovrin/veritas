@@ -1,13 +1,13 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { invalid } from '#nexitas/server/utils/invalid'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { collectionSettingsSchema } from '../../../../../../shared/contracts'
-import { changedTypes, getCollection, updateCollection } from '../../../../../core/content'
-import { invalidFields, routeCollection, routeSpace } from '../../../../../utils/veritas'
+import { collectionSettingsSchema } from '../../../../../../../shared/contracts'
+import { changedTypes, getCollection, updateCollection } from '../../../../../../core/content'
+import { invalidFields, routeCollection, projectSpace } from '../../../../../../utils/veritas'
 
 /** A new name and field list. A saved field keeps its type; removing one stops its delivery. */
 export default defineEventHandler(async (event) => {
-  const { project } = routeSpace(event)
+  const { project } = projectSpace(event)
   const collection = routeCollection(event, project.id)
   const body = collectionSettingsSchema.safeParse(await readBody(event))
   if (!body.success) throw invalid(body.error)

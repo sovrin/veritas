@@ -19,6 +19,9 @@ import {
   createCollection,
   createEntry,
   createSpace,
+  deleteEntry,
+  getCollection,
+  getEntry,
   getSpace,
   listCollections,
   listEntries,
@@ -105,6 +108,19 @@ describe('content', () => {
         .map((entry) => entry.slug)
         .sort(),
     ).toEqual(['draft', 'hello'])
+  })
+
+  it("does not find another project's collections and entries", () => {
+    const db = database()
+    createProject(db, { id: 'other', name: 'other', origins: [] })
+    createSpace(db, 'sonotas')
+    createSpace(db, 'other')
+    createCollection(db, 'sonotas', posts)
+    createEntry(db, 'sonotas', 'posts', { slug: 'a', title: 'A', fields: {}, published: true })
+    expect(getCollection(db, 'other', 'posts')).toBeNull()
+    expect(getEntry(db, 'other', 'posts', 'a')).toBeNull()
+    deleteEntry(db, 'other', 'posts', 'a')
+    expect(getEntry(db, 'sonotas', 'posts', 'a')).not.toBeNull()
   })
 
   it('goes with its project, collections and entries included', () => {

@@ -22,7 +22,8 @@ Conventions for working on veritas, in code and in the interface.
   step.
 - Slugs and field keys are addresses: once saved they never change, and a field keeps its type,
   so what is stored always matches what the API promises.
-- `/api/content/*` is the owner's (nexitas' security middleware). The delivery API, `/v1/content/*`,
+- `/api/p/<project>/content/*` is the owner's (nexitas' security middleware), and its handlers
+  take the project from `requestProject(event)`. The delivery API, `/v1/content/*`,
   is public through `publicRoutes` in `server/core/module.ts`: read-only, published entries only,
   any origin, a project's bearer token. Sites and builds out there read it, so it only grows (new
   fields optional, nothing renamed or removed).

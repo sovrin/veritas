@@ -179,5 +179,3 @@ export interface ContentSpace {
   token: string
   collections: CollectionSummary[]
 }
-
-export const newSpaceSchema = z.object({ projectId: z.string().min(1).max(64) }).strict()

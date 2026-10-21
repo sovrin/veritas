@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { errorMessage } from '#nexitas/app/lib/format'
-import type { Collection, Entry } from '../../../../../shared/contracts'
-import { longDate } from '../../../../lib/fields'
+import type { Collection, Entry } from '../../../../../../shared/contracts'
+import { longDate } from '../../../../../lib/fields'
 
 // One entry: its form, what the API delivers for it, and deleting it.
 const route = useRoute()
-const id = route.params.project as string
+const project = useProject().id.value
 const slug = route.params.collection as string
 const entrySlug = route.params.slug as string
 useHead({ title: `${entrySlug} · ${useRuntimeConfig().public.nexitas.name}` })
-const base = `/api/content/${id}/collections/${slug}`
+const base = `/api/p/${project}/content/collections/${slug}`
 const [{ data: collection, error: collectionError }, { data: entry, error, refresh }] =
   await Promise.all([useFetch<Collection>(base), useFetch<Entry>(`${base}/entries/${entrySlug}`)])
 
@@ -25,7 +25,7 @@ async function remove() {
   deleteError.value = ''
   try {
     await $fetch(`${base}/entries/${entrySlug}/delete`, { method: 'POST', body: {} })
-    await navigateTo(`/content/${id}/${slug}`)
+    await navigateTo(`/p/${project}/content/${slug}`)
   } catch (cause) {
     deleteError.value = errorMessage(cause)
   }
@@ -33,15 +33,12 @@ async function remove() {
 </script>
 
 <template>
-  <div>
-    <nav aria-label="Breadcrumb" class="mb-5">
+  <div class="stack gap-5">
+    <nav aria-label="Breadcrumb">
       <ol class="breadcrumb">
-        <li><NuxtLink to="/content">Content</NuxtLink></li>
+        <li><NuxtLink :to="`/p/${project}/content`">Content</NuxtLink></li>
         <li>
-          <NuxtLink :to="`/content/${id}`" class="font-mono">{{ id }}</NuxtLink>
-        </li>
-        <li>
-          <NuxtLink :to="`/content/${id}/${slug}`">{{ collection?.name ?? slug }}</NuxtLink>
+          <NuxtLink :to="`/p/${project}/content/${slug}`">{{ collection?.name ?? slug }}</NuxtLink>
         </li>
         <li aria-current="page" class="font-mono">{{ entrySlug }}</li>
       </ol>
@@ -52,39 +49,42 @@ async function remove() {
         <strong>Could not load this entry.</strong> {{ errorMessage(error || collectionError) }}
       </div>
     </div>
-    <div v-else-if="entry && collection" class="stack gap-6">
-      <div class="stack gap-1">
-        <h1 class="text-l weight-600">{{ entry.title }}</h1>
-        <p class="text-s text-muted">
-          {{ entry.published ? 'Published' : 'Draft' }} · saved {{ longDate(entry.updatedAt) }}
-        </p>
+    <template v-else-if="entry && collection">
+      <div class="page-header">
+        <div class="stack gap-1 min-w-0">
+          <h1 class="text-xl weight-600 break-words">{{ entry.title }}</h1>
+          <p class="text-s text-muted">
+            {{ entry.published ? 'Published' : 'Draft' }} · saved {{ longDate(entry.updatedAt) }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn"
+          data-size="s"
+          data-variant="ghost"
+          data-tone="danger"
+          @click="deleteOpen = true"
+        >
+          Delete entry
+        </button>
+      </div>
+      <div v-if="deleteError" class="alert" data-tone="danger" role="alert">
+        <div><strong>Could not delete the entry.</strong> {{ deleteError }}</div>
       </div>
       <div v-if="savedNotice" class="alert" data-tone="success" role="status">
         <div>
           <strong>Saved.</strong>
-          {{ entry.published ? 'The API delivers it as shown below.' : 'It stays a draft.' }}
+          {{ entry.published ? 'The API delivers it as the preview shows.' : 'It stays a draft.' }}
         </div>
       </div>
       <EntryForm
         :key="entry.updatedAt"
-        :project-id="id"
+        :project-id="project"
         :collection="collection"
         :entry="entry"
         @saved="saved"
       />
-
-      <section class="stack gap-3 hairline-t pt-5" aria-labelledby="delete-title">
-        <h2 id="delete-title" class="text-s weight-600">Delete</h2>
-        <p>
-          <button type="button" class="link text-danger" @click="deleteOpen = true">
-            Delete {{ entry.slug }}
-          </button>
-        </p>
-        <div v-if="deleteError" class="alert" data-tone="danger" role="alert">
-          <div><strong>Could not delete the entry.</strong> {{ deleteError }}</div>
-        </div>
-      </section>
-    </div>
+    </template>
 
     <ConfirmDialog
       v-model:open="deleteOpen"

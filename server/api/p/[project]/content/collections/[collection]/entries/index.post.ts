@@ -1,12 +1,12 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { invalid } from '#nexitas/server/utils/invalid'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { newEntrySchema, readFields } from '../../../../../../../shared/contracts'
-import { createEntry, getEntry } from '../../../../../../core/content'
-import { invalidFields, routeCollection, routeSpace } from '../../../../../../utils/veritas'
+import { newEntrySchema, readFields } from '../../../../../../../../shared/contracts'
+import { createEntry, getEntry } from '../../../../../../../core/content'
+import { invalidFields, routeCollection, projectSpace } from '../../../../../../../utils/veritas'
 
 export default defineEventHandler(async (event) => {
-  const { project } = routeSpace(event)
+  const { project } = projectSpace(event)
   const collection = routeCollection(event, project.id)
   const body = newEntrySchema.safeParse(await readBody(event))
   if (!body.success) throw invalid(body.error)
