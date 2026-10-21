@@ -32,10 +32,8 @@ Conventions for working on veritas, in code and in the interface.
 
 ## UI
 
-- Built only from aequitas: semantic HTML plus its classes, `data-*` variants and ARIA state.
-- The look: nexitas' shell (navbar, one small column, statusbar); inside a page, compact density,
-  square corners, no cards, panels or sidebar. Colour only reports state, always next to a word.
-  Slugs, keys and API paths are mono. Text actions first, at most one primary button per view.
+- The look and the patterns are nexitas': see `../nexitas/AGENTS.md` (UI). Here, only veritas'
+  own: slugs, keys and API paths are mono.
 - Lint changed Vue files: `node ../aequitas/dist/aequitas-check.mjs --css ../nexitas/app/assets/nexitas.css <files>`.
 
 ## Checks

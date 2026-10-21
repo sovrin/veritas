@@ -5,7 +5,7 @@ import { deliveryPath } from '../../../../lib/fields'
 
 // A project's content: its collections, and the token and address its sites read them with.
 const project = useProject().id.value
-useHead({ title: `${project} · Content · ${useRuntimeConfig().public.nexitas.name}` })
+useHead({ title: `Content · ${project}` })
 const { data: space, error, refresh } = await useFetch<ContentSpace>(`/api/p/${project}/content`)
 useLive(refresh)
 const origin = useRequestURL().origin
@@ -32,7 +32,9 @@ async function rotate() {
   <div class="stack gap-5">
     <!-- The project exists (the core's /p/[project] saw to that), so a 404 means no content yet. -->
     <template v-if="error?.statusCode === 404">
-      <h1 class="text-xl weight-600">Content</h1>
+      <div class="page-header">
+        <h1 class="text-xl weight-600">Content</h1>
+      </div>
       <p class="text-muted">
         This project has no content yet. Start it on
         <NuxtLink :to="`/p/${project}`" class="link">the project's page</NuxtLink>.
@@ -43,9 +45,8 @@ async function rotate() {
     </div>
     <template v-else-if="space">
       <div class="page-header">
-        <h1 class="text-xl weight-600">{{ space.name }}</h1>
+        <h1 class="text-xl weight-600">Content</h1>
         <div class="cluster gap-2">
-          <NuxtLink :to="`/p/${project}`" class="btn" data-size="s">Project</NuxtLink>
           <NuxtLink
             :to="`/p/${project}/content/_new`"
             class="btn"
@@ -97,7 +98,7 @@ async function rotate() {
           <p class="text-s text-muted">
             Read-only, published entries only, from any origin. Every request needs the token.
           </p>
-          <EmbedCode :code="snippet" caption="Shell" />
+          <EmbedCode :code="snippet" />
           <div class="cluster gap-2">
             <button
               type="button"

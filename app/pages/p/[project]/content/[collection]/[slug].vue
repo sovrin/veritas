@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { errorMessage } from '#nexitas/app/lib/format'
+import { errorMessage, formatTime } from '#nexitas/app/lib/format'
 import type { Collection, Entry } from '../../../../../../shared/contracts'
-import { longDate } from '../../../../../lib/fields'
 
 // One entry: its form, what the API delivers for it, and deleting it.
 const route = useRoute()
 const project = useProject().id.value
 const slug = route.params.collection as string
 const entrySlug = route.params.slug as string
-useHead({ title: `${entrySlug} · ${useRuntimeConfig().public.nexitas.name}` })
+useHead({ title: `${entrySlug} · ${project}` })
 const base = `/api/p/${project}/content/collections/${slug}`
+// Not live: the form is keyed by the entry's save, so a refresh would reset what is being typed.
 const [{ data: collection, error: collectionError }, { data: entry, error, refresh }] =
   await Promise.all([useFetch<Collection>(base), useFetch<Entry>(`${base}/entries/${entrySlug}`)])
 
@@ -54,7 +54,7 @@ async function remove() {
         <div class="stack gap-1 min-w-0">
           <h1 class="text-xl weight-600 break-words">{{ entry.title }}</h1>
           <p class="text-s text-muted">
-            {{ entry.published ? 'Published' : 'Draft' }} · saved {{ longDate(entry.updatedAt) }}
+            {{ entry.published ? 'Published' : 'Draft' }} · saved {{ formatTime(entry.updatedAt) }}
           </p>
         </div>
         <button

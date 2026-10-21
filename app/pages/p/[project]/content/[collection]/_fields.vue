@@ -6,7 +6,8 @@ import type { Collection } from '../../../../../../shared/contracts'
 const route = useRoute()
 const project = useProject().id.value
 const slug = route.params.collection as string
-useHead({ title: `${slug} fields · ${useRuntimeConfig().public.nexitas.name}` })
+useHead({ title: `${slug} fields · ${project}` })
+// Not live: the form is keyed by what it shows, so a refresh would reset what is being typed.
 const {
   data: collection,
   error,
@@ -20,7 +21,6 @@ async function saved() {
 }
 
 const deleteOpen = ref(false)
-const typed = ref('')
 const deleteError = ref('')
 async function remove() {
   deleteError.value = ''
@@ -87,23 +87,12 @@ async function remove() {
       :title="`Delete ${slug} and its entries?`"
       confirm-label="Delete collection"
       tone="danger"
-      :disabled="typed !== slug"
+      :confirm-word="slug"
       @confirm="remove"
     >
       <template #description
         >Removes the collection and every entry in it. This cannot be undone.</template
       >
-      <div class="field">
-        <label for="confirm-slug"
-          >Type <span class="font-mono">{{ slug }}</span> to confirm</label
-        >
-        <input
-          id="confirm-slug"
-          v-model="typed"
-          class="input font-mono text-s"
-          autocomplete="off"
-        />
-      </div>
     </ConfirmDialog>
   </div>
 </template>

@@ -4,7 +4,9 @@ import type { Collection, Entry } from '../../../../../../shared/contracts'
 const route = useRoute()
 const project = useProject().id.value
 const slug = route.params.collection as string
-useHead({ title: `New entry · ${useRuntimeConfig().public.nexitas.name}` })
+useHead({ title: `New entry · ${project}` })
+// Not live: the form is built from the collection's fields once, and a refresh would change them
+// under what is being typed.
 const { data: collection, error } = await useFetch<Collection>(
   `/api/p/${project}/content/collections/${slug}`,
 )

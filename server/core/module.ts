@@ -1,7 +1,8 @@
 // veritas as a nexitas module: its schema, the read-only delivery API sites and build steps call,
 // and what it says about a project. The owner's sign-in, the /api guard and the projects are the
 // core's.
-import type { H3Event } from 'h3'
+import { readOnlyCors } from '#nexitas/server/utils/cors'
+import { plural } from '#nexitas/app/lib/format'
 import type { NexitasModule } from '#nexitas/shared/modules'
 import { deleteSpace, getSpace, listCollections } from './content'
 
@@ -31,10 +32,14 @@ export const veritas: NexitasModule = {
   ],
   // Read by sites, apps and build steps anywhere, with the project's token instead of a cookie.
   publicRoutes: [
-    { path: /^\/v1\/content\/([a-z0-9-]+)(?:\/[a-z0-9-]+){0,2}$/, json: true, guard: cors },
+    {
+      path: /^\/v1\/content\/([a-z0-9-]+)(?:\/[a-z0-9-]+){0,2}$/,
+      json: true,
+      guard: (event) => readOnlyCors(event, 'The content API only reads.'),
+    },
   ],
   // Everything veritas serves; switched off, all of it answers 404.
-  paths: ['/content', '/api/content'],
+  paths: ['/content', '/api/content', '/v1/content'],
   // An entry is mostly text; a long one can pass 64 kB.
   maxBody: 1024 * 1024,
   projectStatus: (db, projectId) => {
@@ -44,27 +49,11 @@ export const veritas: NexitasModule = {
     const entries = collections.reduce((sum, collection) => sum + collection.entries, 0)
     return [
       {
-        text: `${collections.length} ${collections.length === 1 ? 'collection' : 'collections'}`,
+        text: plural(collections.length, 'collection'),
         to: `/p/${projectId}/content`,
       },
       { text: `${published} of ${entries} published` },
     ]
   },
   deleteProject: (db, projectId) => deleteSpace(db, projectId),
-}
-
-/** Any origin may read: the token, not a cookie, decides. Preflights are answered here. */
-function cors(event: H3Event) {
-  setHeaders(event, { 'Access-Control-Allow-Origin': '*', Vary: 'Origin' })
-  if (event.method === 'OPTIONS') {
-    setHeaders(event, {
-      'Access-Control-Allow-Methods': 'GET',
-      'Access-Control-Allow-Headers': 'authorization',
-      'Access-Control-Max-Age': '600',
-    })
-    setResponseStatus(event, 204)
-    return ''
-  }
-  if (event.method !== 'GET' && event.method !== 'HEAD')
-    throw createError({ statusCode: 405, statusMessage: 'The content API only reads.' })
 }

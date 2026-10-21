@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Collection } from '../../../../../shared/contracts'
 const project = useProject().id.value
-useHead({ title: `Add a collection · ${useRuntimeConfig().public.nexitas.name}` })
+useHead({ title: `Add a collection · ${project}` })
 const saved = (collection: Collection) => navigateTo(`/p/${project}/content/${collection.slug}`)
 </script>
 

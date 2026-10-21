@@ -1,8 +1,8 @@
 import type { H3Event } from 'h3'
-import { tokensMatch } from '#nexitas/server/core/auth'
 import { getProject } from '#nexitas/server/core/projects'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
 import { requestProject } from '#nexitas/server/utils/projects'
+import { requireBearer } from '#nexitas/server/utils/auth'
 import { isSlug } from '../../shared/contracts'
 import { getCollection, getEntry, getSpace } from '../core/content'
 
@@ -40,16 +40,6 @@ export function routeEntry(event: H3Event, projectId: string, collection: string
 export function requireToken(event: H3Event) {
   const db = nexitasDatabase()
   const id = getRouterParam(event, 'project') ?? ''
-  const space = getSpace(db, id)
-  const token = getHeader(event, 'authorization')?.replace(/^Bearer\s+/i, '') ?? ''
-  if (!space || !tokensMatch(token, space.token)) {
-    setHeader(event, 'WWW-Authenticate', 'Bearer')
-    throw createError({ statusCode: 401, statusMessage: 'Invalid token.' })
-  }
+  requireBearer(event, getSpace(db, id)?.token)
   return getProject(db, id)!
-}
-
-/** A 400 listing each field that does not fit, as invalid() does for a schema. */
-export function invalidFields(issues: { path: string; message: string }[]) {
-  return createError({ statusCode: 400, statusMessage: 'Check these fields.', data: { issues } })
 }

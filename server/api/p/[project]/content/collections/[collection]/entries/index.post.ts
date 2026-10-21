@@ -3,7 +3,7 @@ import { invalid } from '#nexitas/server/utils/invalid'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
 import { newEntrySchema, readFields } from '../../../../../../../../shared/contracts'
 import { createEntry, getEntry } from '../../../../../../../core/content'
-import { invalidFields, routeCollection, projectSpace } from '../../../../../../../utils/veritas'
+import { routeCollection, projectSpace } from '../../../../../../../utils/veritas'
 
 export default defineEventHandler(async (event) => {
   const { project } = projectSpace(event)
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const body = newEntrySchema.safeParse(await readBody(event))
   if (!body.success) throw invalid(body.error)
   const read = readFields(collection, body.data.fields)
-  if ('issues' in read) throw invalidFields(read.issues)
+  if ('issues' in read) throw invalid(read.issues)
   const db = nexitasDatabase()
   if (!createEntry(db, project.id, collection.slug, { ...body.data, fields: read.fields }))
     throw createError({ statusCode: 409, statusMessage: 'An entry with this slug exists already.' })

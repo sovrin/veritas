@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { errorMessage } from '#nexitas/app/lib/format'
+import { errorMessage, formatAge } from '#nexitas/app/lib/format'
 import type { Collection, EntrySummary } from '../../../../../../shared/contracts'
-import { FIELD_META, deliveryPath, shortDate } from '../../../../../lib/fields'
+import { FIELD_META, deliveryPath } from '../../../../../lib/fields'
 
 // One collection's entries, newest first.
 const route = useRoute()
 const project = useProject().id.value
 const slug = route.params.collection as string
-useHead({ title: `${slug} · ${useRuntimeConfig().public.nexitas.name}` })
+useHead({ title: `${slug} · ${project}` })
 const {
   data: collection,
   error,
@@ -69,29 +69,29 @@ const published = computed(
           <tbody>
             <tr v-for="entry in collection.entries" :key="entry.slug">
               <td>
-                <span class="cluster gap-3 flex-nowrap items-baseline">
-                  <span
+                <span class="stack gap-1 min-w-0">
+                  <!-- A draft recedes to muted; what the API delivers stands in full ink. -->
+                  <NuxtLink
+                    :to="`/p/${project}/content/${slug}/${entry.slug}`"
+                    class="link break-words"
+                    :class="entry.published ? 'weight-600' : 'text-muted'"
+                    >{{ entry.title }}</NuxtLink
+                  >
+                  <span class="font-mono text-xs text-muted">{{ entry.slug }}</span>
+                </span>
+              </td>
+              <td class="text-s">
+                <span class="cluster gap-2 flex-nowrap"
+                  ><span
                     class="dot"
                     :data-tone="entry.published ? 'success' : undefined"
                     aria-hidden="true"
-                  ></span>
-                  <span class="stack gap-1 min-w-0">
-                    <!-- A draft recedes to muted; what the API delivers stands in full ink. -->
-                    <NuxtLink
-                      :to="`/p/${project}/content/${slug}/${entry.slug}`"
-                      class="link break-words"
-                      :class="entry.published ? 'weight-600' : 'text-muted'"
-                      >{{ entry.title }}</NuxtLink
-                    >
-                    <span class="font-mono text-xs text-muted">{{ entry.slug }}</span>
-                  </span>
-                </span>
-              </td>
-              <td class="text-s" :class="entry.published ? 'text-success' : 'text-muted'">
-                {{ entry.published ? 'published' : 'draft' }}
+                  ></span
+                  >{{ entry.published ? 'published' : 'draft' }}</span
+                >
               </td>
               <td data-num class="text-muted">
-                <time>{{ shortDate(entry.updatedAt) }}</time>
+                <time>{{ formatAge(entry.updatedAt) }}</time>
               </td>
             </tr>
           </tbody>
@@ -105,7 +105,12 @@ const published = computed(
         <template v-if="collection.fields.length">
           <span v-for="(field, index) in collection.fields" :key="field.key"
             ><template v-if="index"> · </template
-            ><i class="icon" :data-icon="FIELD_META[field.type].icon" data-size="s"></i>
+            ><i
+              class="icon"
+              :data-icon="FIELD_META[field.type].icon"
+              data-size="s"
+              aria-hidden="true"
+            ></i>
             {{ field.label }}</span
           >
         </template>

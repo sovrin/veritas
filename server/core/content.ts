@@ -1,7 +1,7 @@
 // A project's content: its delivery token, its collections and their entries. A project's content
 // owns its collections, a collection its entries; deleting one deletes what it owns (foreign keys
 // cascade, see module.ts).
-import { randomBytes } from 'node:crypto'
+import { newToken } from '#nexitas/server/core/auth'
 import type { DatabaseSync } from 'node:sqlite'
 import type {
   Collection,
@@ -10,9 +10,6 @@ import type {
   Entry,
   EntrySummary,
 } from '../../shared/contracts'
-
-/** A read token for the delivery API. Shown to the owner, so it is kept as it is. */
-export const newToken = () => `vt_${randomBytes(24).toString('base64url')}`
 
 // ── A project's content
 
@@ -31,14 +28,14 @@ export function createSpace(db: DatabaseSync, projectId: string, now = Date.now(
       .prepare(
         'INSERT OR IGNORE INTO content_projects (project_id, token, created_at) VALUES (?, ?, ?)',
       )
-      .run(projectId, newToken(), now).changes === 1
+      .run(projectId, newToken('vt_'), now).changes === 1
   )
 }
 
 /** A new token; the old one stops working at once. */
 export function rotateToken(db: DatabaseSync, projectId: string) {
   db.prepare('UPDATE content_projects SET token = ? WHERE project_id = ?').run(
-    newToken(),
+    newToken('vt_'),
     projectId,
   )
 }

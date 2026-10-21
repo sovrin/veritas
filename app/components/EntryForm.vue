@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { errorMessage } from '#nexitas/app/lib/format'
 import type { Collection, Entry } from '../../shared/contracts'
 import { coerce, deliver, emptyValue, slugify } from '../../shared/contracts'
 import { deliveryPath } from '../lib/fields'
@@ -43,30 +42,18 @@ const delivered = computed(() =>
   ),
 )
 
-const pending = ref(false)
-const error = ref('')
-const issues = ref<{ path: string; message: string }[]>([])
-const fieldError = (path: string) => issues.value.find((issue) => issue.path === path)?.message
+const { pending, error, issues, fieldError, submit } = useSubmit()
 
 async function save() {
-  pending.value = true
-  error.value = ''
-  issues.value = []
   const body = { title: title.value, fields: values, published: published.value }
   const base = `/api/p/${props.projectId}/content/collections/${props.collection.slug}/entries`
-  try {
-    const saved = await $fetch<Entry>(props.entry ? `${base}/${props.entry.slug}` : base, {
+  const saved = await submit(() =>
+    $fetch<Entry>(props.entry ? `${base}/${props.entry.slug}` : base, {
       method: 'POST',
       body: props.entry ? body : { ...body, slug: slug.value },
-    })
-    emit('saved', saved)
-  } catch (cause) {
-    const data = (cause as { data?: { data?: { issues?: typeof issues.value } } }).data?.data
-    if (data?.issues?.length) issues.value = data.issues
-    else error.value = errorMessage(cause)
-  } finally {
-    pending.value = false
-  }
+    }),
+  )
+  if (saved) emit('saved', saved)
 }
 </script>
 
@@ -153,22 +140,9 @@ async function save() {
         <label><input v-model="published" type="checkbox" role="switch" /> Published</label>
       </fieldset>
 
-      <div v-if="issues.length || error" class="alert" data-tone="danger" role="alert">
-        <div>
-          <template v-if="error"><strong>Could not save the entry.</strong> {{ error }}</template>
-          <template v-else>
-            <strong>Check these fields.</strong>
-            <ul>
-              <li v-for="issue in issues" :key="issue.path">
-                <span class="font-mono">{{ issue.path }}</span
-                >: {{ issue.message }}
-              </li>
-            </ul>
-          </template>
-        </div>
-      </div>
+      <FormIssues :error="error" :issues="issues" failed="Could not save the entry." />
 
-      <div class="cluster gap-3">
+      <div class="cluster gap-3 hairline-t pt-5">
         <p class="caption">
           {{ published ? 'The API delivers it once saved.' : 'A draft: the API leaves it out.' }}
         </p>

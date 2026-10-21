@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { errorMessage } from '#nexitas/app/lib/format'
+import { errorMessage, plural } from '#nexitas/app/lib/format'
 import type { ProjectSummary } from '#nexitas/shared/contracts'
 import type { ContentSpace } from '../../../shared/contracts'
 
@@ -38,9 +38,8 @@ async function start() {
     <template v-else-if="space">
       <p class="cluster gap-3 text-s">
         <span class="text-muted"
-          >{{ space.collections.length }}
-          {{ space.collections.length === 1 ? 'collection' : 'collections' }} ·
-          {{ count('published') }} of {{ count('entries') }} published</span
+          >{{ plural(space.collections.length, 'collection') }} · {{ count('published') }} of
+          {{ count('entries') }} published</span
         >
         <NuxtLink :to="`/p/${project.id}/content`" class="link">Collections and API</NuxtLink>
       </p>

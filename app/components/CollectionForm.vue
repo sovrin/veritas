@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { errorMessage } from '#nexitas/app/lib/format'
 import type { Collection, Field, FieldType } from '../../shared/contracts'
 import { FIELD_TYPES, fieldKey, slugify } from '../../shared/contracts'
 import { FIELD_META } from '../lib/fields'
@@ -33,34 +32,21 @@ function labelled(row: Row) {
   if (!row.keyTouched) row.key = fieldKey(row.label)
 }
 
-const pending = ref(false)
-const error = ref('')
-const issues = ref<{ path: string; message: string }[]>([])
-const fieldError = (path: string) =>
-  issues.value.find((issue) => issue.path === path || issue.path.startsWith(`${path}.`))?.message
+const { pending, error, issues, fieldError, submit } = useSubmit()
 
 async function save() {
-  pending.value = true
-  error.value = ''
-  issues.value = []
   const settings = {
     name: name.value,
     fields: rows.value.map(({ key, label, type }) => ({ key: key.trim(), label, type })),
   }
   const base = `/api/p/${props.projectId}/content/collections`
-  try {
-    const saved = await $fetch<Collection>(
-      props.collection ? `${base}/${props.collection.slug}` : base,
-      { method: 'POST', body: props.collection ? settings : { ...settings, slug: slug.value } },
-    )
-    emit('saved', saved)
-  } catch (cause) {
-    const data = (cause as { data?: { data?: { issues?: typeof issues.value } } }).data?.data
-    if (data?.issues?.length) issues.value = data.issues
-    else error.value = errorMessage(cause)
-  } finally {
-    pending.value = false
-  }
+  const saved = await submit(() =>
+    $fetch<Collection>(props.collection ? `${base}/${props.collection.slug}` : base, {
+      method: 'POST',
+      body: props.collection ? settings : { ...settings, slug: slug.value },
+    }),
+  )
+  if (saved) emit('saved', saved)
 }
 </script>
 
@@ -163,14 +149,19 @@ async function save() {
             </div>
             <div class="cluster justify-between gap-3">
               <small class="text-muted cluster gap-1 flex-nowrap"
-                ><i class="icon" :data-icon="FIELD_META[row.type].icon" data-size="s"></i
+                ><i
+                  class="icon"
+                  :data-icon="FIELD_META[row.type].icon"
+                  data-size="s"
+                  aria-hidden="true"
+                ></i
                 >{{ FIELD_META[row.type].hint }}</small
               >
               <button type="button" class="link text-s text-danger" @click="rows.splice(index, 1)">
                 Remove
               </button>
             </div>
-            <span v-if="fieldError(`fields.${index}`)" data-error class="text-danger text-s">{{
+            <span v-if="fieldError(`fields.${index}`)" data-error>{{
               fieldError(`fields.${index}`)
             }}</span>
           </li>
@@ -178,30 +169,15 @@ async function save() {
         <p>
           <button type="button" class="link text-s" @click="addField">Add a field</button>
         </p>
-        <span v-if="fieldError('fields') && !rows.length" data-error class="text-danger text-s">{{
+        <span v-if="fieldError('fields') && !rows.length" data-error>{{
           fieldError('fields')
         }}</span>
       </section>
     </fieldset>
 
-    <div v-if="issues.length || error" class="alert" data-tone="danger" role="alert">
-      <div>
-        <template v-if="error"
-          ><strong>Could not save the collection.</strong> {{ error }}</template
-        >
-        <template v-else>
-          <strong>Check these settings.</strong>
-          <ul>
-            <li v-for="issue in issues" :key="issue.path">
-              <span class="font-mono">{{ issue.path }}</span
-              >: {{ issue.message }}
-            </li>
-          </ul>
-        </template>
-      </div>
-    </div>
+    <FormIssues :error="error" :issues="issues" failed="Could not save the collection." />
 
-    <div class="cluster gap-3">
+    <div class="cluster gap-3 hairline-t pt-5">
       <p class="caption">Removing a field stops the API delivering it.</p>
       <button
         type="submit"
