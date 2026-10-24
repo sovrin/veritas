@@ -26,6 +26,7 @@ import {
   listCollections,
   listEntries,
   rotateToken,
+  updateCollection,
   updateEntry,
 } from '../../server/core/content'
 import { veritas } from '../../server/core/module'
@@ -110,6 +111,27 @@ describe('content', () => {
         .map((entry) => entry.slug)
         .sort(),
     ).toEqual(['draft', 'hello'])
+  })
+
+  it("drops a removed field's values, so a field added again under its key starts empty", () => {
+    const db = database()
+    createSpace(db, 'sonotas')
+    createCollection(db, 'sonotas', posts)
+    createEntry(db, 'sonotas', 'posts', {
+      slug: 'a',
+      title: 'A',
+      fields: { body: 'abc', featured: true },
+      published: true,
+    })
+    updateCollection(db, 'sonotas', 'posts', { name: 'Posts', fields: posts.fields.slice(2) })
+    expect(getEntry(db, 'sonotas', 'posts', 'a')!.fields).toEqual({ featured: true })
+    const again = {
+      name: 'Posts',
+      fields: [...posts.fields.slice(2), { key: 'body', label: 'Body', type: 'number' as const }],
+    }
+    expect(changedTypes(getCollection(db, 'sonotas', 'posts')!, again)).toEqual([])
+    updateCollection(db, 'sonotas', 'posts', again)
+    expect(getEntry(db, 'sonotas', 'posts', 'a')!.fields).toEqual({ featured: true })
   })
 
   it("does not find another project's collections and entries", () => {

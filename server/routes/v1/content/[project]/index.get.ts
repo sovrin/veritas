@@ -8,11 +8,14 @@ export default defineEventHandler((event) => {
   return {
     slug: project.id,
     name: project.name,
-    collections: listCollections(nexitasDatabase(), project.id).map((collection) => ({
-      slug: collection.slug,
-      name: collection.name,
-      fields: collection.fields.map(({ key, type }) => ({ key, type })),
-      entries: collection.published,
-    })),
+    // A collection with nothing published is not out yet: its name and fields stay the owner's.
+    collections: listCollections(nexitasDatabase(), project.id)
+      .filter((collection) => collection.published > 0)
+      .map((collection) => ({
+        slug: collection.slug,
+        name: collection.name,
+        fields: collection.fields.map(({ key, type }) => ({ key, type })),
+        entries: collection.published,
+      })),
   }
 })

@@ -40,8 +40,8 @@ owner         ── /p/<project>/content                           collections,
 
 A field's key (camelCase, like `heroImage`) is the name the API uses. Key and type are fixed once
 saved, so stored values always match what the API promises. Removing a field stops it being
-delivered. Collection and entry slugs are `a–z`, `0–9` and dashes; they are addresses, so they
-never change.
+delivered and drops its values, so a field added again under its key starts empty. Collection and
+entry slugs are `a–z`, `0–9` and dashes; they are addresses, so they never change.
 
 ## Delivery API
 
@@ -58,7 +58,11 @@ curl -H "Authorization: Bearer $TOKEN" https://nexitas.example.com/v1/content/<p
 | `GET /v1/content/:project/:collection`       | Published entries, newest first                                                   |
 | `GET /v1/content/:project/:collection/:slug` | One entry                                                                         |
 
-An entry is flat: its slug and title, then one key per field, then when it last changed.
+The project lists only collections with at least one published entry.
+
+An entry is flat: its slug and title, then one key per field, then when it last changed. Texts
+(text and markdown fields, the title too) are delivered raw, as written: a site must escape or
+sanitise them before it renders them as HTML.
 
 ```json
 {
@@ -72,7 +76,8 @@ An entry is flat: its slug and title, then one key per field, then when it last 
 ```
 
 `401` means the token is wrong or the project has no content. `404` means the collection or entry
-doesn't exist or isn't published. While Content is switched off, every route answers `404`.
+doesn't exist or isn't published. `429` means one sender asked more than 600 times in a minute.
+While Content is switched off, every route answers `404`.
 
 ## Admin API
 

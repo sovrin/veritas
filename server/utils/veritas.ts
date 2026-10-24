@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
+import { createLimiter } from '#nexitas/server/core/limits'
 import { getProject } from '#nexitas/server/core/projects'
-import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
+import { nexitasDatabase, requestSender } from '#nexitas/server/utils/nexitas'
 import { requestProject } from '#nexitas/server/utils/projects'
 import { requireBearer } from '#nexitas/server/utils/auth'
 import { isSlug } from '../../shared/contracts'
@@ -35,9 +36,14 @@ export function routeEntry(event: H3Event, projectId: string, collection: string
   return entry
 }
 
+// Generous for a site's build, which reads every entry at once; it only stops a flood.
+const perSender = createLimiter(600, 60 * 1000)
+
 /** The project of a delivery request, if its bearer token matches. An unknown project and a wrong
  *  token look the same. */
 export function requireToken(event: H3Event) {
+  if (!perSender.hit(requestSender(event)))
+    throw createError({ statusCode: 429, statusMessage: 'Too many requests. Try again later.' })
   const db = nexitasDatabase()
   const id = getRouterParam(event, 'project') ?? ''
   requireBearer(event, getSpace(db, id)?.token)

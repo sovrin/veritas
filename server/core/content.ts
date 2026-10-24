@@ -2,6 +2,7 @@
 // owns its collections, a collection its entries; deleting one deletes what it owns (foreign keys
 // cascade, see module.ts).
 import { newToken } from '#nexitas/server/core/auth'
+import { transaction } from '#nexitas/server/core/database'
 import type { DatabaseSync } from 'node:sqlite'
 import type {
   Collection,
@@ -114,9 +115,26 @@ export function updateCollection(
   settings: CollectionSettings,
   now = Date.now(),
 ) {
-  db.prepare(
-    'UPDATE collections SET name = ?, fields = ?, updated_at = ? WHERE project_id = ? AND slug = ?',
-  ).run(settings.name, JSON.stringify(settings.fields), now, projectId, slug)
+  const keys = new Set(settings.fields.map((field) => field.key))
+  transaction(db, () => {
+    db.prepare(
+      'UPDATE collections SET name = ?, fields = ?, updated_at = ? WHERE project_id = ? AND slug = ?',
+    ).run(settings.name, JSON.stringify(settings.fields), now, projectId, slug)
+    // A removed field's values go with it: a field added again under its key, maybe with another
+    // type, starts empty instead of serving what the old one stored.
+    const rows = db
+      .prepare('SELECT slug, fields FROM entries WHERE project_id = ? AND collection = ?')
+      .all(projectId, slug) as { slug: string; fields: string }[]
+    const strip = db.prepare(
+      'UPDATE entries SET fields = ? WHERE project_id = ? AND collection = ? AND slug = ?',
+    )
+    for (const row of rows) {
+      const fields = Object.entries(JSON.parse(row.fields) as Record<string, unknown>)
+      const kept = fields.filter(([key]) => keys.has(key))
+      if (kept.length < fields.length)
+        strip.run(JSON.stringify(Object.fromEntries(kept)), projectId, slug, row.slug)
+    }
+  })
 }
 
 /** Deletes the collection and its entries. */
