@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { errorMessage } from '#nexitas/app/lib/format'
 import type { Collection } from '../../../../../../shared/contracts'
 
 // A collection's name and fields, and deleting it.
@@ -19,32 +18,23 @@ async function saved() {
   savedNotice.value = true
 }
 
-const deleteError = ref('')
+const { pending, error: deleteError, submit } = useSubmit()
 async function remove() {
-  deleteError.value = ''
-  try {
-    await $fetch(`/api/p/${project}/content/collections/${slug}/delete`, {
-      method: 'POST',
-      body: {},
-    })
-    await navigateTo(`/p/${project}/content`)
-  } catch (cause) {
-    deleteError.value = errorMessage(cause)
-  }
+  const done = await submit(() =>
+    $fetch(`/api/p/${project}/content/collections/${slug}/delete`, { method: 'POST', body: {} }),
+  )
+  if (done) await navigateTo(`/p/${project}/content`)
 }
 </script>
 
 <template>
   <AppPage
-    title="Fields"
+    title="Settings"
     :trail="[{ label: collection?.name ?? slug, to: `/p/${project}/content/${slug}` }]"
     failed="Could not load this collection."
     :error="error"
   >
     <template v-if="collection">
-      <AppAlert v-if="deleteError" title="Could not delete the collection.">{{
-        deleteError
-      }}</AppAlert>
       <AppAlert v-if="savedNotice" tone="success" title="Saved."
         >The API delivers the new fields from now on.</AppAlert
       >
@@ -64,10 +54,14 @@ async function remove() {
         label="Delete collection"
         :title="`Delete ${slug} and its entries?`"
         :confirm-word="slug"
+        :pending="pending"
         @confirm="remove"
       >
-        Removes the collection and every entry in it. This cannot be undone.
+        This cannot be undone.
       </DangerAction>
+      <AppAlert v-if="deleteError" class="w-full" title="Could not delete the collection.">{{
+        deleteError
+      }}</AppAlert>
     </template>
   </AppPage>
 </template>

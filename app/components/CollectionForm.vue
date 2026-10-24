@@ -24,8 +24,17 @@ const rows = ref<Row[]>(
   props.collection?.fields.map((field) => ({ ...field, saved: true, keyTouched: true })) ?? [],
 )
 const types = Object.keys(FIELD_TYPES) as FieldType[]
-function addField() {
+// Focus follows the change: into the new field's label, or, after a removal, to "Add a field".
+const addButton = ref<HTMLButtonElement>()
+async function addField() {
   rows.value.push({ key: '', label: '', type: 'text', saved: false, keyTouched: false })
+  await nextTick()
+  document.getElementById(`label-${rows.value.length - 1}`)?.focus()
+}
+async function removeField(index: number) {
+  rows.value.splice(index, 1)
+  await nextTick()
+  addButton.value?.focus()
 }
 // A new field's key follows its label until it is edited by hand.
 function labelled(row: Row) {
@@ -93,10 +102,7 @@ async function save() {
       </div>
 
       <AppSection title="Fields">
-        <p class="text-s text-muted">
-          Every entry has a title and a slug; these come on top. A saved field keeps its key and
-          type.
-        </p>
+        <p class="text-s text-muted">Every entry has a title and a slug; these come on top.</p>
         <ul v-if="rows.length" data-variant="plain" class="stack gap-3" aria-label="Fields">
           <li v-for="(row, index) in rows" :key="index" class="stack gap-2 py-3 hairline-b">
             <div class="cluster gap-3 flex-nowrap items-start">
@@ -156,7 +162,7 @@ async function save() {
                 ></i
                 >{{ FIELD_META[row.type].hint }}</small
               >
-              <button type="button" class="link text-s text-danger" @click="rows.splice(index, 1)">
+              <button type="button" class="link text-s text-danger" @click="removeField(index)">
                 Remove
               </button>
             </div>
@@ -166,7 +172,9 @@ async function save() {
           </li>
         </ul>
         <p>
-          <button type="button" class="link text-s" @click="addField">Add a field</button>
+          <button ref="addButton" type="button" class="link text-s" @click="addField">
+            Add a field
+          </button>
         </p>
         <span v-if="fieldError('fields') && !rows.length" data-error>{{
           fieldError('fields')

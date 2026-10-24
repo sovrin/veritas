@@ -3,7 +3,7 @@ import type { Collection, Entry } from '../../shared/contracts'
 import { coerce, deliver, emptyValue, slugify } from '../../shared/contracts'
 import { deliveryPath } from '../lib/fields'
 
-/** Writes a new entry, or edits `entry`. The form follows the collection's fields; beside it stands
+/** Writes a new entry, or edits `entry`. The form follows the collection's fields; under it stands
  *  what the API delivers for it, since a headless CMS has no page to preview. */
 const props = defineProps<{ projectId: string; collection: Collection; entry?: Entry }>()
 const emit = defineEmits<{ saved: [Entry] }>()
@@ -59,7 +59,7 @@ async function save() {
 
 <template>
   <!-- The preview lives here, not in the page, so it follows the form's values as they are typed. -->
-  <AsideLayout>
+  <div class="stack gap-5">
     <form class="stack gap-5 min-w-0" @submit.prevent="save">
       <fieldset :disabled="pending" class="stack gap-4">
         <div class="field">
@@ -153,10 +153,8 @@ async function save() {
 
       <FormIssues :error="error" :issues="issues" failed="Could not save the entry." />
 
+      <!-- The button says what saving does, so nothing beside it repeats the switch. -->
       <div class="cluster gap-3 hairline-t pt-5">
-        <p class="caption">
-          {{ published ? 'The API delivers it once saved.' : 'A draft: the API leaves it out.' }}
-        </p>
         <button
           type="submit"
           class="btn end"
@@ -165,15 +163,13 @@ async function save() {
           :disabled="pending"
           :aria-busy="pending || undefined"
         >
-          {{ entry ? 'Save changes' : published ? 'Publish' : 'Save draft' }}
+          {{ published ? 'Publish' : 'Save draft' }}
         </button>
       </div>
     </form>
 
-    <template #aside>
-      <AppSection title="As the API delivers it">
-        <pre class="snippet font-mono text-xs"><code>{{ delivered }}</code></pre>
-      </AppSection>
-    </template>
-  </AsideLayout>
+    <AppSection title="As the API delivers it">
+      <pre class="snippet font-mono text-xs"><code>{{ delivered }}</code></pre>
+    </AppSection>
+  </div>
 </template>

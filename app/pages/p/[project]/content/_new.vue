@@ -5,7 +5,7 @@ const saved = (collection: Collection) => navigateTo(`/p/${project}/content/${co
 </script>
 
 <template>
-  <AppPage title="Add a collection">
+  <AppPage title="New collection">
     <!-- A form reads best at a line's length, however wide the window. -->
     <div class="measure">
       <CollectionForm :project-id="project" @saved="saved" />

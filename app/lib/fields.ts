@@ -12,3 +12,7 @@ export const FIELD_META: Record<FieldType, { icon: string; hint: string }> = {
 /** How a project's content is read, for the snippets on its pages. */
 export const deliveryPath = (projectId: string, ...slugs: string[]) =>
   ['/v1/content', projectId, ...slugs].join('/')
+
+/** The request a site reads a project's content with, for its panel and its content page. */
+export const deliverySnippet = (origin: string, projectId: string, token: string) =>
+  `curl -H "Authorization: Bearer ${token}" ${origin}${deliveryPath(projectId)}`
