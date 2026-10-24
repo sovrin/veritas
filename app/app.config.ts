@@ -8,6 +8,7 @@ export default defineAppConfig({
         label: 'Content',
         description: 'Collections and entries, delivered to your sites as JSON.',
         icon: 'file-text',
+        accent: 'indigo',
         panel: 'VeritasProject',
       },
     ],

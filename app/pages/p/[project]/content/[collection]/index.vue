@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { formatAge } from '#nexitas/app/lib/format'
+import { formatAge, plural } from '#nexitas/app/lib/format'
 import type { Collection, EntrySummary } from '../../../../../../shared/contracts'
 import { FIELD_META, deliveryPath } from '../../../../../lib/fields'
 
-// One collection's entries, newest first.
+// One collection's entries: drafts first, since they wait on the owner, then newest first.
 const route = useRoute()
 const project = useProject().id.value
 const slug = route.params.collection as string
@@ -12,9 +12,17 @@ const {
   error,
   refresh,
 } = await useProjectFetch<Collection & { entries: EntrySummary[] }>(`/content/collections/${slug}`)
-const published = computed(
-  () => collection.value?.entries.filter((entry) => entry.published).length ?? 0,
+const entries = computed(() =>
+  (collection.value?.entries ?? []).toSorted(
+    (a, b) => Number(a.published) - Number(b.published) || b.updatedAt - a.updatedAt,
+  ),
 )
+const drafts = computed(() => entries.value.filter((entry) => !entry.published).length)
+const headline = computed(() => {
+  const count = entries.value.length
+  if (!count) return 'No entries yet'
+  return drafts.value ? plural(drafts.value, 'draft') : `All ${count} published`
+})
 </script>
 
 <template>
@@ -24,10 +32,6 @@ const published = computed(
     :error="error"
     :retry="refresh"
   >
-    <template v-if="collection" #subtitle>
-      {{ published }} of {{ collection.entries.length }} published ·
-      <span class="font-mono">{{ deliveryPath(project, slug) }}</span>
-    </template>
     <template v-if="collection" #actions>
       <NuxtLink :to="`/p/${project}/content/${slug}/_fields`" class="btn" data-size="s"
         >Fields</NuxtLink
@@ -42,7 +46,12 @@ const published = computed(
     </template>
 
     <template v-if="collection">
-      <DataTable v-if="collection.entries.length">
+      <AppLead :title="headline">
+        <template #meta
+          ><span class="font-mono">{{ deliveryPath(project, slug) }}</span></template
+        >
+      </AppLead>
+      <DataTable v-if="entries.length">
         <thead>
           <tr>
             <th scope="col">Entry</th>
@@ -51,7 +60,7 @@ const published = computed(
           </tr>
         </thead>
         <tbody>
-          <tr v-for="entry in collection.entries" :key="entry.slug">
+          <tr v-for="entry in entries" :key="entry.slug">
             <td>
               <span class="stack gap-1 min-w-0">
                 <!-- A draft recedes to muted; what the API delivers stands in full ink. -->
@@ -75,9 +84,7 @@ const published = computed(
           </tr>
         </tbody>
       </DataTable>
-      <EmptyState v-else>
-        No entries yet. New entries stay drafts until you publish them.
-      </EmptyState>
+      <EmptyState v-else> New entries stay drafts until you publish them. </EmptyState>
 
       <p class="text-s text-muted">
         <template v-if="collection.fields.length">

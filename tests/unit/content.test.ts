@@ -96,7 +96,9 @@ describe('content', () => {
         updatedAt: expect.any(String),
       },
     ])
-    expect(listCollections(db, 'sonotas')).toEqual([{ ...posts, entries: 2, published: 1 }])
+    expect(listCollections(db, 'sonotas')).toEqual([
+      { ...posts, entries: 2, published: 1, updatedAt: expect.any(Number) },
+    ])
     updateEntry(db, 'sonotas', 'posts', {
       slug: 'draft',
       title: 'Now out',

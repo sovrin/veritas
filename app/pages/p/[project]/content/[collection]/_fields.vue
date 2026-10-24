@@ -41,16 +41,6 @@ async function remove() {
     failed="Could not load this collection."
     :error="error"
   >
-    <template v-if="collection" #actions>
-      <DangerAction
-        label="Delete collection"
-        :title="`Delete ${slug} and its entries?`"
-        :confirm-word="slug"
-        @confirm="remove"
-      >
-        Removes the collection and every entry in it. This cannot be undone.
-      </DangerAction>
-    </template>
     <template v-if="collection">
       <AppAlert v-if="deleteError" title="Could not delete the collection.">{{
         deleteError
@@ -67,6 +57,17 @@ async function remove() {
           @saved="saved"
         />
       </div>
+    </template>
+    <template v-if="collection" #danger>
+      <span>Removes the collection and every entry in it.</span>
+      <DangerAction
+        label="Delete collection"
+        :title="`Delete ${slug} and its entries?`"
+        :confirm-word="slug"
+        @confirm="remove"
+      >
+        Removes the collection and every entry in it. This cannot be undone.
+      </DangerAction>
     </template>
   </AppPage>
 </template>

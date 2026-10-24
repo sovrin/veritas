@@ -4,7 +4,7 @@
 import { readOnlyCors } from '#nexitas/server/utils/cors'
 import { plural } from '#nexitas/app/lib/format'
 import type { NexitasModule } from '#nexitas/shared/modules'
-import { deleteSpace, getSpace, listCollections } from './content'
+import { deleteSpace, getSpace, listChangedEntries, listCollections } from './content'
 
 export const veritas: NexitasModule = {
   id: 'veritas',
@@ -52,8 +52,15 @@ export const veritas: NexitasModule = {
         text: plural(collections.length, 'collection'),
         to: `/p/${projectId}/content`,
       },
-      { text: `${published} of ${entries} published` },
+      { text: `${published} of ${entries} published`, figure: `${published}/${entries}` },
     ]
   },
+  projectActivity: (db, projectId, since) =>
+    listChangedEntries(db, projectId, since).map((entry) => ({
+      at: entry.at,
+      title: entry.published ? 'Published' : 'Draft saved',
+      detail: entry.title,
+      to: `/p/${projectId}/content/${entry.collection}/${entry.slug}`,
+    })),
   deleteProject: (db, projectId) => deleteSpace(db, projectId),
 }

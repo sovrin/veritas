@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { errorMessage } from '#nexitas/app/lib/format'
+import { errorMessage, formatAge, plural } from '#nexitas/app/lib/format'
 import type { ContentSpace } from '../../../../../shared/contracts'
 import { deliveryPath } from '../../../../lib/fields'
 
@@ -8,6 +8,19 @@ const project = useProject().id.value
 const { data: space, error, refresh } = await useProjectFetch<ContentSpace>('/content')
 // The project exists (the core's /p/[project] saw to that), so a 404 means no content yet.
 const notStarted = computed(() => error.value?.statusCode === 404)
+// Drafts are what wait on the owner; everything else is already out.
+const totals = computed(() => {
+  const collections = space.value?.collections ?? []
+  const entries = collections.reduce((sum, collection) => sum + collection.entries, 0)
+  const published = collections.reduce((sum, collection) => sum + collection.published, 0)
+  const saved = Math.max(0, ...collections.map((collection) => collection.updatedAt ?? 0))
+  return { entries, published, drafts: entries - published, saved }
+})
+const headline = computed(() => {
+  const { entries, drafts } = totals.value
+  if (!entries) return 'No entries yet'
+  return drafts ? `${plural(drafts, 'draft')} waiting` : 'Everything is published'
+})
 const origin = useRequestURL().origin
 const snippet = computed(() =>
   space.value
@@ -30,6 +43,7 @@ async function rotate() {
 <template>
   <AppPage
     title="Content"
+    aside-title="API"
     failed="Could not load this project's content."
     :error="notStarted ? undefined : error"
     :retry="refresh"
@@ -44,8 +58,17 @@ async function rotate() {
       This project has no content yet. Start it on
       <NuxtLink :to="`/p/${project}`" class="link">the project's page</NuxtLink>.
     </EmptyState>
+    <AppLead v-if="space" :title="headline">
+      <template #meta
+        ><template v-if="totals.entries"
+          >{{ totals.published }} of {{ plural(totals.entries, 'entry', 'entries') }} published ·
+          {{ plural(space.collections.length, 'collection') }} · last saved
+          {{ formatAge(totals.saved) }}</template
+        ><template v-else>{{ plural(space.collections.length, 'collection') }}</template></template
+      >
+    </AppLead>
     <!-- The collections take the room; how sites read them sits beside them. -->
-    <AppSection v-else-if="space" title="Collections">
+    <AppSection v-if="space" title="Collections">
       <DataTable v-if="space.collections.length">
         <thead>
           <tr>
@@ -77,25 +100,22 @@ async function rotate() {
     </AppSection>
 
     <template v-if="space" #aside>
-      <AppSection title="API">
-        <p class="text-s text-muted">
-          Read-only, published entries only, from any origin. Every request needs the token.
-        </p>
-        <EmbedCode :code="snippet" />
-        <div class="cluster gap-2">
-          <DangerAction
-            label="Replace the token"
-            title="Replace the token?"
-            confirm-label="Replace token"
-            @confirm="rotate"
-          >
-            Sites and builds that read with the old one get a 401 until they use the new one.
-          </DangerAction>
-        </div>
-        <AppAlert v-if="rotateError" title="Could not replace the token.">{{
-          rotateError
-        }}</AppAlert>
-      </AppSection>
+      <p class="text-s text-muted">
+        Read-only, published entries only, from any origin. Every request needs the token.
+      </p>
+      <EmbedCode :code="snippet" />
+      <AppAlert v-if="rotateError" title="Could not replace the token.">{{ rotateError }}</AppAlert>
+    </template>
+    <template v-if="space" #danger>
+      <span>Replaces the token; whatever reads with the old one gets a 401.</span>
+      <DangerAction
+        label="Replace the token"
+        title="Replace the token?"
+        confirm-label="Replace token"
+        @confirm="rotate"
+      >
+        Sites and builds that read with the old one get a 401 until they use the new one.
+      </DangerAction>
     </template>
   </AppPage>
 </template>

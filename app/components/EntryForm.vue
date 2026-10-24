@@ -67,6 +67,7 @@ async function save() {
           <input
             id="title"
             v-model="title"
+            data-size="s"
             class="input"
             required
             maxlength="200"
@@ -79,6 +80,7 @@ async function save() {
           <input
             id="slug"
             v-model="slug"
+            data-size="s"
             class="input font-mono text-s"
             required
             maxlength="64"
@@ -109,6 +111,7 @@ async function save() {
               v-if="field.type === 'markdown'"
               :id="`field-${field.key}`"
               v-model="values[field.key] as string"
+              data-size="s"
               class="input font-mono text-s"
               rows="10"
             ></textarea>
@@ -116,6 +119,7 @@ async function save() {
               v-else-if="field.type === 'number'"
               :id="`field-${field.key}`"
               v-model.number="values[field.key]"
+              data-size="s"
               class="input"
               type="number"
               step="any"
@@ -124,10 +128,17 @@ async function save() {
               v-else-if="field.type === 'date'"
               :id="`field-${field.key}`"
               v-model="values[field.key]"
+              data-size="s"
               class="input"
               type="date"
             />
-            <input v-else :id="`field-${field.key}`" v-model="values[field.key]" class="input" />
+            <input
+              v-else
+              :id="`field-${field.key}`"
+              v-model="values[field.key]"
+              data-size="s"
+              class="input"
+            />
           </template>
           <span v-if="fieldError(`fields.${field.key}`)" data-error>{{
             fieldError(`fields.${field.key}`)

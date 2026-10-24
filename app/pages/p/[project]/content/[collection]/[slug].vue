@@ -46,11 +46,6 @@ async function remove() {
     <template v-if="entry" #subtitle>
       {{ entry.published ? 'Published' : 'Draft' }} · saved {{ formatTime(entry.updatedAt) }}
     </template>
-    <template v-if="entry && collection" #actions>
-      <DangerAction label="Delete entry" :title="`Delete ${entrySlug}?`" @confirm="remove">
-        This cannot be undone.
-      </DangerAction>
-    </template>
     <template v-if="entry && collection">
       <AppAlert v-if="deleteError" title="Could not delete the entry.">{{ deleteError }}</AppAlert>
       <AppAlert v-if="savedNotice" tone="success" title="Saved.">{{
@@ -63,6 +58,12 @@ async function remove() {
         :entry="entry"
         @saved="saved"
       />
+    </template>
+    <template v-if="entry && collection" #danger>
+      <span>Removes the entry from the collection and the API.</span>
+      <DangerAction label="Delete entry" :title="`Delete ${entrySlug}?`" @confirm="remove">
+        This cannot be undone.
+      </DangerAction>
     </template>
   </AppPage>
 </template>

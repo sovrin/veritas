@@ -167,6 +167,8 @@ export function deliver(entry: Entry, collection: Pick<Collection, 'fields'>) {
 export interface CollectionSummary extends Collection {
   entries: number
   published: number
+  /** When an entry in it was last saved; null while it has none. */
+  updatedAt: number | null
 }
 
 /** An entry on a collection's list, without its fields. */

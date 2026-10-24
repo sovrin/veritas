@@ -65,14 +65,20 @@ export function listCollections(db: DatabaseSync, projectId: string): Collection
     .prepare(
       `SELECT c.slug, c.name, c.fields,
         (SELECT COUNT(*) FROM entries e WHERE e.project_id = c.project_id AND e.collection = c.slug) AS entries,
-        (SELECT COUNT(*) FROM entries e WHERE e.project_id = c.project_id AND e.collection = c.slug AND e.published) AS published
+        (SELECT COUNT(*) FROM entries e WHERE e.project_id = c.project_id AND e.collection = c.slug AND e.published) AS published,
+        (SELECT MAX(e.updated_at) FROM entries e WHERE e.project_id = c.project_id AND e.collection = c.slug) AS updated_at
       FROM collections c WHERE c.project_id = ? ORDER BY c.name, c.slug`,
     )
-    .all(projectId) as unknown as (CollectionRow & { entries: number; published: number })[]
+    .all(projectId) as unknown as (CollectionRow & {
+    entries: number
+    published: number
+    updated_at: number | null
+  })[]
   return rows.map((row) => ({
     ...toCollection(row),
     entries: row.entries,
     published: row.published,
+    updatedAt: row.updated_at,
   }))
 }
 
@@ -233,4 +239,20 @@ export function deleteEntry(db: DatabaseSync, projectId: string, collection: str
 export function changedTypes(before: Collection, after: CollectionSettings) {
   const types = new Map(before.fields.map((field) => [field.key, field.type]))
   return after.fields.filter((field) => types.has(field.key) && types.get(field.key) !== field.type)
+}
+
+/** Entries saved since `since`, newest first: the news on the project's overview. */
+export function listChangedEntries(db: DatabaseSync, projectId: string, since: number) {
+  return db
+    .prepare(
+      `SELECT collection, slug, title, published, updated_at AS at FROM entries
+      WHERE project_id = ? AND updated_at > ? ORDER BY updated_at DESC LIMIT 30`,
+    )
+    .all(projectId, since) as {
+    collection: string
+    slug: string
+    title: string
+    published: number
+    at: number
+  }[]
 }
