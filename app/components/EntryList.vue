@@ -146,29 +146,32 @@ const headline = computed(() => {
       </AppLead>
     </template>
     <template v-if="all.length || (space?.collections.length ?? 0) > 1" #filters>
-      <!-- Which collection: a switch, shown once there is more than one to switch between. -->
-      <FilterLinks
-        v-if="(space?.collections.length ?? 0) > 1"
-        label="Collection"
-        :options="
-          space!.collections.map((other) => ({
-            label: other.name,
-            to: `/p/${project}/content/${other.slug}`,
-            current: other.slug === slug,
-          }))
-        "
-      />
-      <FilterLinks
-        v-if="all.length"
-        label="Show"
-        :options="
-          FILTERS.map((option) => ({
-            label: `${option.label} ${counts[option.value]}`,
-            to: within({ state: option.value }),
-            current: filter === option.value,
-          }))
-        "
-      />
+      <!-- The two switches read as one group, the search apart from them. -->
+      <div class="cluster gap-5">
+        <!-- Which collection: a switch, shown once there is more than one to switch between. -->
+        <FilterLinks
+          v-if="(space?.collections.length ?? 0) > 1"
+          label="Collection"
+          :options="
+            space!.collections.map((other) => ({
+              label: other.name,
+              to: `/p/${project}/content/${other.slug}`,
+              current: other.slug === slug,
+            }))
+          "
+        />
+        <FilterLinks
+          v-if="all.length"
+          label="Show"
+          :options="
+            FILTERS.map((option) => ({
+              label: `${option.label} ${counts[option.value]}`,
+              to: within({ state: option.value }),
+              current: filter === option.value,
+            }))
+          "
+        />
+      </div>
       <SearchBox
         v-if="all.length"
         v-model="searchText"

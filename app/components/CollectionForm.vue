@@ -185,7 +185,7 @@ async function save() {
     <FormIssues :error="error" :issues="issues" failed="Could not save the collection." />
 
     <div class="cluster gap-3 hairline-t pt-5">
-      <p class="caption">Removing a field stops the API delivering it.</p>
+      <p v-if="collection" class="caption">Removing a field stops the API delivering it.</p>
       <button
         type="submit"
         class="btn end"

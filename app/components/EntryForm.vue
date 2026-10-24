@@ -148,7 +148,9 @@ async function save() {
           {{ collection.name }} has no fields besides the title and slug.
         </p>
 
-        <label><input v-model="published" type="checkbox" role="switch" /> Published</label>
+        <div class="field">
+          <label><input v-model="published" type="checkbox" role="switch" /> Published</label>
+        </div>
       </fieldset>
 
       <FormIssues :error="error" :issues="issues" failed="Could not save the entry." />
