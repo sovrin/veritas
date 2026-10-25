@@ -43,7 +43,7 @@ export const veritas: NexitasModule = {
   // An entry is mostly text; a long one can pass 64 kB.
   maxBody: 1024 * 1024,
   projectStatus: (db, projectId) => {
-    if (!getSpace(db, projectId)) return []
+    if (!getSpace(db, projectId)) return [{ text: 'Not set up', to: `/p/${projectId}/content` }]
     const collections = listCollections(db, projectId)
     const published = collections.reduce((sum, collection) => sum + collection.published, 0)
     const entries = collections.reduce((sum, collection) => sum + collection.entries, 0)

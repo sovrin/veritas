@@ -1,5 +1,4 @@
-// veritas' part of the nexitas shell: its name and icon, its panel on each project, and its
-// section in the nav.
+// veritas' part of the nexitas shell: its name, icon and hue, and its section in the nav.
 export default defineAppConfig({
   nexitas: {
     modules: [
@@ -9,7 +8,6 @@ export default defineAppConfig({
         description: 'Collections and entries, delivered to your sites as JSON.',
         icon: 'file-text',
         accent: 'indigo',
-        panel: 'VeritasProject',
       },
     ],
     nav: [{ to: '/content', label: 'Content', module: 'veritas' }],

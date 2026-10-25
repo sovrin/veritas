@@ -9,8 +9,8 @@ it on as Content. To use it, install nexitas. nexitas brings the sign-in, the pa
 database and the projects (each site's name and origins); veritas adds:
 
 - **content per project**: a project's collections, their entries, and a read token for its sites;
-- the admin pages under Content: collections, entries, their fields and the API;
-- a Content panel on each project's page: start its content, see how much is published;
+- the admin pages under Content: start a project's content there, then collections, entries,
+  their fields, and its Setup (the token and API);
 - the delivery API, read by sites, apps and build steps.
 
 ## How it fits together
@@ -45,8 +45,8 @@ entry slugs are `a–z`, `0–9` and dashes; they are addresses, so they never c
 
 ## Delivery API
 
-Read-only. Only published entries. Every request needs the project's token, which its Content page
-shows (and can replace). Any origin may call it.
+Read-only. Only published entries. Every request needs the project's token, which its Content page's
+Setup shows (and can replace). Any origin may call it.
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" https://nexitas.example.com/v1/content/<project>/<collection>

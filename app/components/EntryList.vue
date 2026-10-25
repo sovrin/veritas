@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { formatAge, plural } from '#nexitas/app/lib/format'
-import type { Collection, ContentSpace, EntrySummary } from '../../shared/contracts'
-import { deliveryPath, deliverySnippet } from '../lib/fields'
+import type { Collection, EntrySummary } from '../../shared/contracts'
+import { deliveryPath } from '../lib/fields'
+import { useContentSetup } from '../lib/setup'
 
 /** <EntryList :selected="slug" :aside-name="slug" aside-mono><template #aside>…</template></EntryList>
  *  The content's page, one collection at a time: the project's collections as a switch, the
  *  collection's entries in the pane, their filter, search and page in the address. An entry's page
  *  renders it too, with `selected` marking its row and the entry in `aside` (the inspector), so
- *  writing entries never leaves the list. With no entry open, the inspector shows how sites read
- *  the content. */
+ *  writing entries never leaves the list. With no entry open, Setup opens the inspector on how sites
+ *  read the content. */
 defineProps<{ selected?: string; asideName?: string; asideMono?: boolean; asideTitle?: string }>()
 const slots = defineSlots<{ aside?: () => unknown; danger?: () => unknown }>()
 
@@ -33,23 +34,11 @@ const {
   { key: `veritas-entries-${project}-${slug}` },
 )
 
-// The project's collections for the switch, and its token for the API beside the list.
-const { data: space, refresh: refreshSpace } = await useProjectFetch<ContentSpace>('/content')
-const origin = useRequestURL().origin
-const snippet = computed(() =>
-  space.value ? deliverySnippet(origin, project, space.value.token) : '',
-)
-const { pending: rotating, error: rotateError, submit } = useSubmit()
-const rotated = ref(false)
-async function rotate() {
-  rotated.value = false
-  const done = await submit(() =>
-    $fetch(`/api/p/${project}/content/token`, { method: 'POST', body: {} }),
-  )
-  if (!done) return
-  await refreshSpace()
-  rotated.value = true
-}
+// The project's collections for the switch, and its setup (the token sites read it with), which
+// the inspector shows on demand while no entry is open.
+const { space, snippet, rotate, rotating, rotateError, rotated } = await useContentSetup()
+const setup = useSetup()
+const setupOpen = computed(() => !slots.aside && setup.open.value)
 
 const filter = computed<Filter>(() =>
   route.query.state === 'drafts' || route.query.state === 'published' ? route.query.state : 'all',
@@ -115,14 +104,19 @@ const headline = computed(() => {
     failed="Could not load this collection."
     :error="error"
     :retry="refresh"
-    :aside-title="slots.aside ? asideTitle : 'API'"
+    :aside-title="slots.aside ? asideTitle : 'Setup'"
     :aside-name="asideName"
     :aside-mono="asideMono"
     :aside-close="
-      slots.aside ? { path: `/p/${project}/content/${slug}`, query: route.query } : undefined
+      slots.aside
+        ? { path: `/p/${project}/content/${slug}`, query: route.query }
+        : setupOpen
+          ? setup.close.value
+          : undefined
     "
   >
     <template v-if="collection" #actions>
+      <SetupLink v-if="!slots.aside" />
       <NuxtLink :to="`/p/${project}/content/_new`" class="btn" data-size="s"
         >New collection</NuxtLink
       >
@@ -237,14 +231,14 @@ const headline = computed(() => {
     </template>
 
     <template v-if="slots.aside" #aside><slot name="aside" /></template>
-    <template v-else-if="space" #aside>
+    <template v-else-if="space && setupOpen" #aside>
       <p class="text-s text-muted">
         Read-only, published entries only, from any origin. Every request needs the token.
       </p>
       <EmbedCode :code="snippet" />
     </template>
     <template v-if="slots.danger" #danger><slot name="danger" /></template>
-    <template v-else-if="space && !slots.aside" #danger>
+    <template v-else-if="space && setupOpen" #danger>
       <span>Replaces the token; whatever reads with the old one gets a 401.</span>
       <DangerAction
         label="Replace the token"
