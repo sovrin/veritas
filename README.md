@@ -37,6 +37,7 @@ owner         ── /p/<project>/content                           collections,
 | Number   | number or `null`                                     |
 | Yes / no | boolean                                              |
 | Date     | `"YYYY-MM-DD"` or `""`                               |
+| List     | array of strings, `[]` when empty                    |
 | Image    | `{ url, name, type, size, width, height }` or `null` |
 | File     | `{ url, name, type, size, width, height }` or `null` |
 

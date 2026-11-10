@@ -8,6 +8,7 @@ import {
   deliveredFile,
   emptyValue,
   slugify,
+  splitList,
 } from '../../shared/contracts'
 import { deliveryPath } from '../lib/fields'
 
@@ -31,6 +32,14 @@ const values = reactive<Record<string, unknown>>(
       const value = coerce(field.type, props.entry?.fields[field.key])
       return [field.key, value === undefined ? emptyValue(field.type) : value]
     }),
+  ),
+)
+// A list is typed as text, so a trailing comma or space survives until the next value.
+const listText = reactive<Record<string, string>>(
+  Object.fromEntries(
+    props.collection.fields
+      .filter((field) => field.type === 'list')
+      .map((field) => [field.key, (values[field.key] as string[]).join(', ')]),
   ),
 )
 // File fields use whichever module provides files: its picker, and the files it picked, for the
@@ -145,6 +154,18 @@ async function save() {
                 >Needs a module that provides files. Until one is on, the entry keeps what it has
                 here.</small
               >
+            </template>
+            <template v-else-if="field.type === 'list'">
+              <input
+                :id="`field-${field.key}`"
+                v-model="listText[field.key]"
+                data-size="s"
+                class="input"
+                autocomplete="off"
+                :aria-describedby="`field-${field.key}-help`"
+                @input="values[field.key] = splitList(listText[field.key] ?? '')"
+              />
+              <small :id="`field-${field.key}-help`">Separate values with commas</small>
             </template>
             <input
               v-else-if="field.type === 'number'"

@@ -28,6 +28,7 @@ export const FIELD_TYPES = {
   number: 'Number',
   boolean: 'Yes / no',
   date: 'Date',
+  list: 'List',
   image: 'Image',
   file: 'File',
 } as const
@@ -47,6 +48,7 @@ const FIELD_EXPECTS: Record<FieldType, string> = {
   number: 'a number',
   boolean: 'on or off',
   date: 'a date',
+  list: 'words, separated by commas',
   image: 'an image',
   file: 'a file',
 }
@@ -127,8 +129,16 @@ export interface Entry {
 
 /** What an entry holds for a field nobody has filled in yet. */
 export function emptyValue(type: FieldType): unknown {
+  if (type === 'list') return []
   return type === 'number' || FIELD_NEEDS[type] === 'files' ? null : type === 'boolean' ? false : ''
 }
+
+/** "news, , vue" → ["news", "vue"]: how a list is typed in, one comma between values. */
+export const splitList = (text: string) =>
+  text
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
 
 /** The value as the field's type stores it, or undefined when it cannot be one. */
 export function coerce(type: FieldType, value: unknown): unknown {
@@ -146,6 +156,11 @@ export function coerce(type: FieldType, value: unknown): unknown {
       return value === '' || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value))
         ? value
         : undefined
+    case 'list':
+      // Trimmed, without empty or repeated values, in the order given.
+      if (!Array.isArray(value) || !value.every((item) => typeof item === 'string'))
+        return undefined
+      return [...new Set(value.map((item) => item.trim()).filter(Boolean))]
     case 'image':
     case 'file':
       // A file's id; whether the project has it is the server's check (checkFiles).

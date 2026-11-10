@@ -13,6 +13,7 @@ import {
   readFields,
   selectFields,
   slugify,
+  splitList,
   type Collection,
 } from '../../shared/contracts'
 import {
@@ -76,6 +77,16 @@ describe('content', () => {
     })
     expect(selectFields('', posts).only).toBeNull()
     expect(selectFields('title,tilte', posts).unknown).toEqual(['tilte'])
+  })
+
+  it('stores a list as trimmed strings, each once, and refuses anything else', () => {
+    const tagged = { fields: [{ key: 'tags', label: 'Tags', type: 'list' as const }] }
+    expect(readFields(tagged, { tags: splitList(' vue, ,news,vue ') })).toEqual({
+      fields: { tags: ['vue', 'news'] },
+    })
+    expect(readFields(tagged, {})).toEqual({ fields: { tags: [] } })
+    expect(readFields(tagged, { tags: 'vue' })).toHaveProperty('issues')
+    expect(readFields(tagged, { tags: ['vue', 1] })).toHaveProperty('issues')
   })
 
   it('starts once per project, with a token that can be replaced', () => {
