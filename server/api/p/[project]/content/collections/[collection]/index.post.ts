@@ -1,9 +1,9 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { invalid } from '#nexitas/server/utils/invalid'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { collectionSettingsSchema } from '../../../../../../../shared/contracts'
-import { changedTypes, getCollection, updateCollection } from '../../../../../../core/content'
-import { routeCollection, projectSpace, unavailableFields } from '../../../../../../utils/veritas'
+import { collectionSettingsSchema } from '#self/shared/contracts'
+import { changedTypes, getCollection, updateCollection } from '#self/server/core/content'
+import { routeCollection, projectSpace, unavailableFields } from '#self/server/utils/veritas'
 
 /** A new name and field list. A saved field keeps its type; removing one stops its delivery. */
 export default defineEventHandler(async (event) => {

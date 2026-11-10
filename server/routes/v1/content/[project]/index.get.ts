@@ -1,6 +1,6 @@
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { listCollections } from '../../../../core/content'
-import { requireToken } from '../../../../utils/veritas'
+import { listCollections } from '#self/server/core/content'
+import { requireToken } from '#self/server/utils/veritas'
 
 /** The project and its collections: their fields, and how many published entries each serves. */
 export default defineEventHandler((event) => {

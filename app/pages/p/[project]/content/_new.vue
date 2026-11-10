@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Collection } from '../../../../../shared/contracts'
+import type { Collection } from '#self/shared/contracts'
 const project = useProject().id.value
 const saved = (collection: Collection) => navigateTo(`/p/${project}/content/${collection.slug}`)
 </script>

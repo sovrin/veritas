@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Collection, Field, FieldType } from '../../shared/contracts'
-import { FIELD_NEEDS, FIELD_TYPES, fieldKey, slugify } from '../../shared/contracts'
-import { FIELD_META } from '../lib/fields'
+import type { Collection, Field, FieldType } from '#self/shared/contracts'
+import { FIELD_NEEDS, FIELD_TYPES, fieldKey, slugify } from '#self/shared/contracts'
+import { FIELD_META } from '#self/app/lib/fields'
 
 /** Adds a collection to a project, or changes one: its name and fields. A saved field keeps its key
  *  and type, so what is stored always matches what the API promises. */

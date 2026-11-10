@@ -15,7 +15,7 @@ import {
   slugify,
   splitList,
   type Collection,
-} from '../../shared/contracts'
+} from '#self/shared/contracts'
 import {
   changedTypes,
   createCollection,
@@ -30,8 +30,8 @@ import {
   rotateToken,
   updateCollection,
   updateEntry,
-} from '../../server/core/content'
-import { veritas } from '../../server/core/module'
+} from '#self/server/core/content'
+import { veritas } from '#self/server/core/module'
 
 const dirs: string[] = []
 const dbs: DatabaseSync[] = []

@@ -16,8 +16,8 @@ import {
   isSlug,
   type Collection,
   type Field,
-} from '../../shared/contracts'
-import { getCollection, getEntry, getSpace } from '../core/content'
+} from '#self/shared/contracts'
+import { getCollection, getEntry, getSpace } from '#self/server/core/content'
 
 /** A route parameter that must be a slug. Anything else cannot exist, so it is a 404. */
 function slugParam(event: H3Event, name: string) {

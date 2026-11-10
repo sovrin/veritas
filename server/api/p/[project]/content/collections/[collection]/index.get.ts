@@ -1,6 +1,6 @@
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { summarizeEntries } from '../../../../../../core/content'
-import { routeCollection, projectSpace } from '../../../../../../utils/veritas'
+import { summarizeEntries } from '#self/server/core/content'
+import { routeCollection, projectSpace } from '#self/server/utils/veritas'
 
 /** The collection, and its entries without their fields, newest first. */
 export default defineEventHandler((event) => {

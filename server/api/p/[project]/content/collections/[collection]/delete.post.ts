@@ -1,7 +1,7 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { deleteCollection } from '../../../../../../core/content'
-import { routeCollection, projectSpace } from '../../../../../../utils/veritas'
+import { deleteCollection } from '#self/server/core/content'
+import { routeCollection, projectSpace } from '#self/server/utils/veritas'
 
 /** Deletes the collection with every entry in it. */
 export default defineEventHandler((event) => {
