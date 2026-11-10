@@ -70,8 +70,11 @@ const delivered = computed(() =>
 
 const { pending, error, issues, fieldError, submit } = useSubmit()
 
-async function save() {
-  const body = { title: title.value, fields: values, published: published.value }
+// Which state the save in progress leaves the entry in, for the button that started it.
+const saving = ref<boolean | null>(null)
+async function save(publish = published.value) {
+  saving.value = publish
+  const body = { title: title.value, fields: values, published: publish }
   const base = `/api/p/${props.projectId}/content/collections/${props.collection.slug}/entries`
   const saved = await submit(() =>
     $fetch<Entry>(props.entry ? `${base}/${props.entry.slug}` : base, {
@@ -79,14 +82,23 @@ async function save() {
       body: props.entry ? body : { ...body, slug: slug.value },
     }),
   )
-  if (saved) emit('saved', saved)
+  saving.value = null
+  if (!saved) return
+  published.value = saved.published
+  emit('saved', saved)
+}
+// Publish and Unpublish change the state, so only a click does it: Enter in a field submits, and
+// keeps it. They check the form as a submit would.
+const form = useTemplateRef<HTMLFormElement>('form')
+function saveAs(publish: boolean) {
+  if (form.value?.reportValidity()) save(publish)
 }
 </script>
 
 <template>
   <!-- The preview lives here, not in the page, so it follows the form's values as they are typed. -->
   <div class="stack gap-5">
-    <form class="stack gap-5 min-w-0" @submit.prevent="save">
+    <form ref="form" class="stack gap-5 min-w-0" @submit.prevent="save()">
       <fieldset :disabled="pending" class="stack gap-4">
         <div class="field">
           <label for="title">Title</label>
@@ -196,25 +208,45 @@ async function save() {
         <p v-if="!collection.fields.length" class="text-s text-muted">
           {{ collection.name }} has no fields besides the title and slug.
         </p>
-
-        <div class="field">
-          <label><input v-model="published" type="checkbox" role="switch" /> Published</label>
-        </div>
       </fieldset>
 
       <FormIssues :error="error" :issues="issues" failed="Could not save the entry." />
 
-      <!-- The button says what saving does, so nothing beside it repeats the switch. -->
+      <!-- A draft's primary is Publish; a published entry's is Save, beside Unpublish. -->
       <div class="cluster gap-3 hairline-t pt-5">
         <button
-          type="submit"
+          v-if="published"
+          type="button"
           class="btn end"
+          data-size="s"
+          :disabled="pending"
+          :aria-busy="(pending && saving === false) || undefined"
+          @click="saveAs(false)"
+        >
+          Unpublish
+        </button>
+        <button
+          type="submit"
+          class="btn"
+          :class="{ end: !published }"
+          data-size="s"
+          :data-variant="published ? 'primary' : undefined"
+          :disabled="pending"
+          :aria-busy="(pending && saving === published) || undefined"
+        >
+          {{ published ? 'Save' : 'Save draft' }}
+        </button>
+        <button
+          v-if="!published"
+          type="button"
+          class="btn"
           data-size="s"
           data-variant="primary"
           :disabled="pending"
-          :aria-busy="pending || undefined"
+          :aria-busy="(pending && saving === true) || undefined"
+          @click="saveAs(true)"
         >
-          {{ published ? 'Publish' : 'Save draft' }}
+          Publish
         </button>
       </div>
     </form>
