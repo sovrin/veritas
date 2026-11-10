@@ -118,10 +118,13 @@ function insertImage(file: StoredFile | null) {
       <button
         type="button"
         class="btn"
+        data-icon
+        aria-label="Preview"
+        data-tip="Preview"
         :aria-pressed="previewing"
         @click="previewing = !previewing"
       >
-        <i class="icon" data-icon="eye" aria-hidden="true"></i> Preview
+        <i class="icon" data-icon="eye" aria-hidden="true"></i>
       </button>
     </div>
     <component
