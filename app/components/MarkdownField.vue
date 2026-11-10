@@ -2,7 +2,7 @@
 import type { StoredFile } from '#nexitas/shared/capabilities'
 import { deliveredFile } from '../../shared/contracts'
 import type { MarkdownEdit } from '../lib/markdown'
-import { image, link, prefixLines, renderPreview, wrap } from '../lib/markdown'
+import { image, link, pasteUrl, prefixLines, renderPreview, wrap } from '../lib/markdown'
 
 /** A Markdown field: the textarea, a toolbar that writes the Markdown for you, and a preview. */
 const props = defineProps<{ id: string }>()
@@ -66,6 +66,17 @@ function onKeydown(event: KeyboardEvent) {
   if (!tool) return
   event.preventDefault()
   apply(tool.run)
+}
+
+// A URL pasted over selected words links them, or shows one of the project's files as an image.
+function onPaste(event: ClipboardEvent) {
+  const el = area.value
+  const pasted = event.clipboardData?.getData('text/plain')
+  if (!el || !pasted) return
+  const edit = pasteUrl(el.value, el.selectionStart, el.selectionEnd, pasted, `${origin}/v1/files/`)
+  if (!edit) return
+  event.preventDefault()
+  apply(() => edit)
 }
 
 // An image comes from whichever module provides files: picked or uploaded in its picker, it
@@ -144,6 +155,7 @@ function insertImage(file: StoredFile | null) {
       class="input font-mono text-s"
       rows="10"
       @keydown="onKeydown"
+      @paste="onPaste"
     ></textarea>
     <!-- renderPreview leaves out raw HTML and script addresses (app/lib/markdown.ts). -->
     <div v-if="previewing" class="prose hairline p-4" v-html="preview"></div>

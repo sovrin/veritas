@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { image, link, prefixLines, renderPreview, wrap } from '../../app/lib/markdown'
+import { image, link, pasteUrl, prefixLines, renderPreview, wrap } from '../../app/lib/markdown'
 
 const apply = (text: string, edit: ReturnType<typeof wrap>) => {
   const after = text.slice(0, edit.from) + edit.insert + text.slice(edit.to)
@@ -34,6 +34,26 @@ describe('markdown toolbar', () => {
     expect(apply('ab', image(1, 1, 'shot [1].png', 'https://x/f')).after).toBe(
       'a![shot 1.png](https://x/f)b',
     )
+  })
+})
+
+describe('pasting a URL over a selection', () => {
+  const files = 'https://cms.example/v1/files/'
+  it("shows one of the project's files as an image, and links any other address", () => {
+    const text = 'see the dashboard here'
+    expect(apply(text, pasteUrl(text, 8, 17, ` ${files}blog/abc `, files)!).after).toBe(
+      `see the ![dashboard](${files}blog/abc) here`,
+    )
+    expect(apply(text, pasteUrl(text, 8, 17, 'https://vuejs.org', files)!).after).toBe(
+      'see the [dashboard](https://vuejs.org) here',
+    )
+  })
+
+  it('pastes as it is without a selection, over several lines, or for anything but one URL', () => {
+    expect(pasteUrl('ab', 1, 1, 'https://x.y', files)).toBeNull()
+    expect(pasteUrl('a\nb', 0, 3, 'https://x.y', files)).toBeNull()
+    for (const pasted of ['some text', 'javascript:alert(1)', 'https://x.y and more', 'ftp://x'])
+      expect(pasteUrl('word', 0, 4, pasted, files)).toBeNull()
   })
 })
 

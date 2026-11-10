@@ -58,6 +58,24 @@ export function image(start: number, end: number, name: string, url: string): Ma
   return { from: start, to: end, insert, start: start + insert.length, end: start + insert.length }
 }
 
+/** A URL pasted over a selection: the selection becomes its text, `![…](url)` for one of the
+ *  project's files (`filesUrl` starts their addresses), `[…](url)` for any other address. Null
+ *  for anything else (no selection, more than one line, not a single http(s) URL), which pastes as
+ *  it is. */
+export function pasteUrl(
+  text: string,
+  start: number,
+  end: number,
+  pasted: string,
+  filesUrl: string,
+): MarkdownEdit | null {
+  const url = pasted.trim()
+  const selected = text.slice(start, end)
+  if (!selected.trim() || selected.includes('\n') || !/^https?:\/\/\S+$/i.test(url)) return null
+  const insert = `${url.startsWith(filesUrl) ? '!' : ''}[${selected.replace(/[[\]]/g, '')}](${url})`
+  return { from: start, to: end, insert, start: start + insert.length, end: start + insert.length }
+}
+
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
