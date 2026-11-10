@@ -3,7 +3,7 @@ import { invalid } from '#nexitas/server/utils/invalid'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
 import { collectionSettingsSchema } from '../../../../../../../shared/contracts'
 import { changedTypes, getCollection, updateCollection } from '../../../../../../core/content'
-import { routeCollection, projectSpace } from '../../../../../../utils/veritas'
+import { routeCollection, projectSpace, unavailableFields } from '../../../../../../utils/veritas'
 
 /** A new name and field list. A saved field keeps its type; removing one stops its delivery. */
 export default defineEventHandler(async (event) => {
@@ -19,6 +19,8 @@ export default defineEventHandler(async (event) => {
         message: `"${field.key}" keeps its type once saved. Add a field with a new key instead.`,
       })),
     )
+  const unavailable = unavailableFields(body.data.fields, collection)
+  if (unavailable.length) throw invalid(unavailable)
   const db = nexitasDatabase()
   updateCollection(db, project.id, collection.slug, body.data)
   announceChange()

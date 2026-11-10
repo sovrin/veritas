@@ -7,6 +7,9 @@ export const FIELD_META: Record<FieldType, { icon: string; hint: string }> = {
   number: { icon: 'hash', hint: 'Prices, counts, ratings' },
   boolean: { icon: 'toggle-left', hint: 'On or off: featured, visible' },
   date: { icon: 'calendar', hint: 'A day, without a time' },
+  list: { icon: 'tag', hint: 'Several short values: tags, keywords' },
+  image: { icon: 'image', hint: "A picture from the project's files" },
+  file: { icon: 'paperclip', hint: "A document from the project's files" },
 }
 
 /** How a project's content is read, for the snippets on its pages. */

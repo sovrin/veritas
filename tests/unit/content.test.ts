@@ -11,7 +11,9 @@ import {
   fieldKey,
   newCollectionSchema,
   readFields,
+  selectFields,
   slugify,
+  splitList,
   type Collection,
 } from '../../shared/contracts'
 import {
@@ -58,6 +60,35 @@ const posts: Collection = {
 }
 
 describe('content', () => {
+  it('delivers only the fields a list asks for, the slug always, and names the unknown ones', () => {
+    const entry = {
+      slug: 'hello',
+      title: 'Hello',
+      fields: { body: '# Hi', publishedOn: '2026-10-21', featured: true },
+      published: true,
+      updatedAt: 0,
+    }
+    const { only, unknown } = selectFields('title, publishedOn,,', posts)
+    expect(unknown).toEqual([])
+    expect(deliver(entry, posts, undefined, only)).toEqual({
+      slug: 'hello',
+      title: 'Hello',
+      publishedOn: '2026-10-21',
+    })
+    expect(selectFields('', posts).only).toBeNull()
+    expect(selectFields('title,tilte', posts).unknown).toEqual(['tilte'])
+  })
+
+  it('stores a list as trimmed strings, each once, and refuses anything else', () => {
+    const tagged = { fields: [{ key: 'tags', label: 'Tags', type: 'list' as const }] }
+    expect(readFields(tagged, { tags: splitList(' vue, ,news,vue ') })).toEqual({
+      fields: { tags: ['vue', 'news'] },
+    })
+    expect(readFields(tagged, {})).toEqual({ fields: { tags: [] } })
+    expect(readFields(tagged, { tags: 'vue' })).toHaveProperty('issues')
+    expect(readFields(tagged, { tags: ['vue', 1] })).toHaveProperty('issues')
+  })
+
   it('starts once per project, with a token that can be replaced', () => {
     const db = database()
     expect(createSpace(db, 'sonotas')).toBe(true)
@@ -197,5 +228,43 @@ describe('rules', () => {
     expect(changedTypes(posts, { name: 'Posts', fields: [] })).toEqual([])
     expect(slugify('Hello, Wörld!')).toBe('hello-world')
     expect(fieldKey('Hero image')).toBe('heroImage')
+  })
+
+  it('store a file field as an id, and deliver the file it finds, or null', () => {
+    const team: Collection = {
+      slug: 'team',
+      name: 'Team',
+      fields: [
+        { key: 'photo', label: 'Photo', type: 'image' },
+        { key: 'cv', label: 'CV', type: 'file' },
+      ],
+    }
+    expect(readFields(team, { photo: 'abc_123', cv: '' })).toEqual({
+      fields: { photo: 'abc_123', cv: null },
+    })
+    expect(readFields(team, { photo: '../etc/passwd' })).toEqual({
+      issues: [{ path: 'fields.photo', message: 'Enter an image.' }],
+    })
+    const entry = {
+      slug: 'ada',
+      title: 'Ada',
+      fields: { photo: 'abc_123', cv: 'gone' },
+      published: true,
+      updatedAt: 0,
+    }
+    const photo = {
+      url: 'https://x/v1/files/p/abc_123',
+      name: 'ada.png',
+      type: 'image/png',
+      size: 9,
+      width: 2,
+      height: 1,
+    }
+    expect(deliver(entry, team, (id) => (id === 'abc_123' ? photo : null))).toMatchObject({
+      photo,
+      cv: null,
+    })
+    // Nothing provides files: the fields stay, empty.
+    expect(deliver(entry, team)).toMatchObject({ photo: null, cv: null })
   })
 })

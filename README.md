@@ -30,13 +30,21 @@ owner         ── /p/<project>/content                           collections,
 
 ### Field types
 
-| Type     | Delivered as                                        |
-| -------- | --------------------------------------------------- |
-| Text     | string                                              |
-| Markdown | string, as written; rendering is the consumer's job |
-| Number   | number or `null`                                    |
-| Yes / no | boolean                                             |
-| Date     | `"YYYY-MM-DD"` or `""`                              |
+| Type     | Delivered as                                         |
+| -------- | ---------------------------------------------------- |
+| Text     | string                                               |
+| Markdown | string, as written; rendering is the consumer's job  |
+| Number   | number or `null`                                     |
+| Yes / no | boolean                                              |
+| Date     | `"YYYY-MM-DD"` or `""`                               |
+| List     | array of strings, `[]` when empty                    |
+| Image    | `{ url, name, type, size, width, height }` or `null` |
+| File     | `{ url, name, type, size, width, height }` or `null` |
+
+Image and File fields hold one of the project's files, from a module that provides files (such as
+[repositas](https://github.com/sovrin/repositas)); they are offered only while one is switched on.
+`url` is the file's public address; `width` and `height` are its pixels, `null` for a document.
+Without such a module, or once the file is deleted, the field delivers `null`.
 
 A field's key (camelCase, like `heroImage`) is the name the API uses. Key and type are fixed once
 saved, so stored values always match what the API promises. Removing a field stops it being
@@ -52,11 +60,11 @@ Setup shows (and can replace). Any origin may call it.
 curl -H "Authorization: Bearer $TOKEN" https://nexitas.example.com/v1/content/<project>/<collection>
 ```
 
-| Request                                      | Returns                                                                           |
-| -------------------------------------------- | --------------------------------------------------------------------------------- |
-| `GET /v1/content/:project`                   | `{ slug, name, collections: [{ slug, name, fields: [{ key, type }], entries }] }` |
-| `GET /v1/content/:project/:collection`       | Published entries, newest first                                                   |
-| `GET /v1/content/:project/:collection/:slug` | One entry                                                                         |
+| Request                                      | Returns                                                                                  |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `GET /v1/content/:project`                   | `{ slug, name, collections: [{ slug, name, fields: [{ key, type }], entries }] }`        |
+| `GET /v1/content/:project/:collection`       | Published entries, newest first; `?fields=title,date` delivers only those (and the slug) |
+| `GET /v1/content/:project/:collection/:slug` | One entry                                                                                |
 
 The project lists only collections with at least one published entry.
 

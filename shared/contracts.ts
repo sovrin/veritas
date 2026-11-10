@@ -1,6 +1,7 @@
 // Every rule about what veritas accepts lives here, shared by the admin pages and the server. The
 // owner's sign-in and the projects are nexitas'.
 import { z } from 'zod'
+import type { Capabilities, StoredFile } from '#nexitas/shared/capabilities'
 
 /** Collections and entries are addressed by slugs: safe in URLs, and never changed once made. */
 export const SLUG = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/
@@ -27,8 +28,18 @@ export const FIELD_TYPES = {
   number: 'Number',
   boolean: 'Yes / no',
   date: 'Date',
+  list: 'List',
+  image: 'Image',
+  file: 'File',
 } as const
 export type FieldType = keyof typeof FIELD_TYPES
+
+/** Field types that need another module's capability: offered for new fields only while a
+ *  switched-on module provides it. A saved field stays, and delivers null while none does. */
+export const FIELD_NEEDS: Partial<Record<FieldType, keyof Capabilities>> = {
+  image: 'files',
+  file: 'files',
+}
 
 /** How an error names what a field takes. */
 const FIELD_EXPECTS: Record<FieldType, string> = {
@@ -37,6 +48,9 @@ const FIELD_EXPECTS: Record<FieldType, string> = {
   number: 'a number',
   boolean: 'on or off',
   date: 'a date',
+  list: 'words, separated by commas',
+  image: 'an image',
+  file: 'a file',
 }
 
 /** Field keys are what API consumers type: camelCase, starting with a letter. */
@@ -115,8 +129,16 @@ export interface Entry {
 
 /** What an entry holds for a field nobody has filled in yet. */
 export function emptyValue(type: FieldType): unknown {
-  return type === 'number' ? null : type === 'boolean' ? false : ''
+  if (type === 'list') return []
+  return type === 'number' || FIELD_NEEDS[type] === 'files' ? null : type === 'boolean' ? false : ''
 }
+
+/** "news, , vue" → ["news", "vue"]: how a list is typed in, one comma between values. */
+export const splitList = (text: string) =>
+  text
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
 
 /** The value as the field's type stores it, or undefined when it cannot be one. */
 export function coerce(type: FieldType, value: unknown): unknown {
@@ -134,6 +156,16 @@ export function coerce(type: FieldType, value: unknown): unknown {
       return value === '' || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value))
         ? value
         : undefined
+    case 'list':
+      // Trimmed, without empty or repeated values, in the order given.
+      if (!Array.isArray(value) || !value.every((item) => typeof item === 'string'))
+        return undefined
+      return [...new Set(value.map((item) => item.trim()).filter(Boolean))]
+    case 'image':
+    case 'file':
+      // A file's id; whether the project has it is the server's check (checkFiles).
+      if (value === '') return null
+      return typeof value === 'string' && /^[\w-]{1,64}$/.test(value) ? value : undefined
   }
 }
 
@@ -154,13 +186,58 @@ export function readFields(
   return issues.length ? { issues } : { fields }
 }
 
-/** An entry as the API delivers it: flat, with exactly the collection's current fields. */
-export function deliver(entry: Entry, collection: Pick<Collection, 'fields'>) {
-  const out: Record<string, unknown> = { slug: entry.slug, title: entry.title }
-  for (const field of collection.fields)
-    out[field.key] = entry.fields[field.key] ?? emptyValue(field.type)
-  out.updatedAt = new Date(entry.updatedAt).toISOString()
+/** How the API delivers an image or file field. */
+export interface DeliveredFile {
+  url: string
+  name: string
+  type: string
+  size: number
+  width: number | null
+  height: number | null
+}
+
+export const deliveredFile = (origin: string, file: StoredFile): DeliveredFile => ({
+  url: origin + file.path,
+  name: file.name,
+  type: file.type,
+  size: file.size,
+  width: file.width,
+  height: file.height,
+})
+
+/** An entry as the API delivers it: flat, with exactly the collection's current fields, or only the
+ *  keys in `only`. A file field holds an id; `file` finds what it delivers, null when the file is
+ *  gone or nothing provides files. */
+export function deliver(
+  entry: Entry,
+  collection: Pick<Collection, 'fields'>,
+  file: (id: string) => DeliveredFile | null = () => null,
+  only: Set<string> | null = null,
+) {
+  const wanted = (key: string) => !only || only.has(key)
+  const out: Record<string, unknown> = { slug: entry.slug }
+  if (wanted('title')) out.title = entry.title
+  for (const field of collection.fields) {
+    if (!wanted(field.key)) continue
+    const value = entry.fields[field.key] ?? emptyValue(field.type)
+    out[field.key] = FIELD_NEEDS[field.type] === 'files' ? value && file(value as string) : value
+  }
+  if (wanted('updatedAt')) out.updatedAt = new Date(entry.updatedAt).toISOString()
   return out
+}
+
+/** The keys a `?fields=a,b` query asks for (null: all of them), and the names in it the collection
+ *  doesn't deliver. The slug always comes along: it is the entry's address. */
+export function selectFields(query: string, collection: Pick<Collection, 'fields'>) {
+  const names = query
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean)
+  const known = new Set(['slug', 'title', 'updatedAt', ...collection.fields.map(({ key }) => key)])
+  return {
+    only: names.length ? new Set(names) : null,
+    unknown: names.filter((name) => !known.has(name)),
+  }
 }
 
 /** A collection on the admin's lists: its entries counted, all and published. */

@@ -5,8 +5,9 @@ import { deliverySnippet } from './fields'
  *  with, and replacing the token in it. */
 export async function useContentSetup() {
   const project = useProject().id.value
-  const { data: space, error, refresh } = await useProjectFetch<ContentSpace>('/content')
+  // Before the await: a plain function loses Nuxt's instance after one, unlike <script setup>.
   const origin = useRequestURL().origin
+  const { data: space, error, refresh } = await useProjectFetch<ContentSpace>('/content')
   const snippet = computed(() =>
     space.value ? deliverySnippet(origin, project, space.value.token) : '',
   )
