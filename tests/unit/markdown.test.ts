@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { image, link, pasteUrl, prefixLines, renderPreview, wrap } from '../../app/lib/markdown'
+import { image, link, pasteUrl, prefixLines, renderPreview, wrap } from '#self/app/lib/markdown'
 
 const apply = (text: string, edit: ReturnType<typeof wrap>) => {
   const after = text.slice(0, edit.from) + edit.insert + text.slice(edit.to)

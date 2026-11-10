@@ -10,7 +10,7 @@ import type {
   CollectionSummary,
   Entry,
   EntrySummary,
-} from '../../shared/contracts'
+} from '#self/shared/contracts'
 
 // ── A project's content
 
