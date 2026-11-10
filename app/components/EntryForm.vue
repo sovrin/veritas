@@ -133,14 +133,11 @@ async function save() {
           >
           <template v-else>
             <label :for="`field-${field.key}`">{{ field.label }}</label>
-            <textarea
+            <MarkdownField
               v-if="field.type === 'markdown'"
               :id="`field-${field.key}`"
               v-model="values[field.key] as string"
-              data-size="s"
-              class="input font-mono text-s"
-              rows="10"
-            ></textarea>
+            />
             <template v-else-if="FIELD_NEEDS[field.type] === 'files'">
               <component
                 :is="'FilesPicker'"

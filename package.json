@@ -16,6 +16,7 @@
     "lint:fix": "oxlint -c oxlint.config.ts --fix"
   },
   "dependencies": {
+    "marked": "18.1.2",
     "nuxt": "4.5.2",
     "vue": "3.5.42",
     "zod": "4.5.4"
