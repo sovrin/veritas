@@ -1,6 +1,7 @@
 // Every rule about what veritas accepts lives here, shared by the admin pages and the server. The
 // owner's sign-in and the projects are nexitas'.
 import { z } from 'zod'
+import type { Capabilities, StoredFile } from '#nexitas/shared/capabilities'
 
 /** Collections and entries are addressed by slugs: safe in URLs, and never changed once made. */
 export const SLUG = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/
@@ -27,8 +28,17 @@ export const FIELD_TYPES = {
   number: 'Number',
   boolean: 'Yes / no',
   date: 'Date',
+  image: 'Image',
+  file: 'File',
 } as const
 export type FieldType = keyof typeof FIELD_TYPES
+
+/** Field types that need another module's capability: offered for new fields only while a
+ *  switched-on module provides it. A saved field stays, and delivers null while none does. */
+export const FIELD_NEEDS: Partial<Record<FieldType, keyof Capabilities>> = {
+  image: 'files',
+  file: 'files',
+}
 
 /** How an error names what a field takes. */
 const FIELD_EXPECTS: Record<FieldType, string> = {
@@ -37,6 +47,8 @@ const FIELD_EXPECTS: Record<FieldType, string> = {
   number: 'a number',
   boolean: 'on or off',
   date: 'a date',
+  image: 'an image',
+  file: 'a file',
 }
 
 /** Field keys are what API consumers type: camelCase, starting with a letter. */
@@ -115,7 +127,7 @@ export interface Entry {
 
 /** What an entry holds for a field nobody has filled in yet. */
 export function emptyValue(type: FieldType): unknown {
-  return type === 'number' ? null : type === 'boolean' ? false : ''
+  return type === 'number' || FIELD_NEEDS[type] === 'files' ? null : type === 'boolean' ? false : ''
 }
 
 /** The value as the field's type stores it, or undefined when it cannot be one. */
@@ -134,6 +146,11 @@ export function coerce(type: FieldType, value: unknown): unknown {
       return value === '' || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value))
         ? value
         : undefined
+    case 'image':
+    case 'file':
+      // A file's id; whether the project has it is the server's check (checkFiles).
+      if (value === '') return null
+      return typeof value === 'string' && /^[\w-]{1,64}$/.test(value) ? value : undefined
   }
 }
 
@@ -154,11 +171,38 @@ export function readFields(
   return issues.length ? { issues } : { fields }
 }
 
-/** An entry as the API delivers it: flat, with exactly the collection's current fields. */
-export function deliver(entry: Entry, collection: Pick<Collection, 'fields'>) {
+/** How the API delivers an image or file field. */
+export interface DeliveredFile {
+  url: string
+  name: string
+  type: string
+  size: number
+  width: number | null
+  height: number | null
+}
+
+export const deliveredFile = (origin: string, file: StoredFile): DeliveredFile => ({
+  url: origin + file.path,
+  name: file.name,
+  type: file.type,
+  size: file.size,
+  width: file.width,
+  height: file.height,
+})
+
+/** An entry as the API delivers it: flat, with exactly the collection's current fields. A file
+ *  field holds an id; `file` finds what it delivers, null when the file is gone or nothing provides
+ *  files. */
+export function deliver(
+  entry: Entry,
+  collection: Pick<Collection, 'fields'>,
+  file: (id: string) => DeliveredFile | null = () => null,
+) {
   const out: Record<string, unknown> = { slug: entry.slug, title: entry.title }
-  for (const field of collection.fields)
-    out[field.key] = entry.fields[field.key] ?? emptyValue(field.type)
+  for (const field of collection.fields) {
+    const value = entry.fields[field.key] ?? emptyValue(field.type)
+    out[field.key] = FIELD_NEEDS[field.type] === 'files' ? value && file(value as string) : value
+  }
   out.updatedAt = new Date(entry.updatedAt).toISOString()
   return out
 }

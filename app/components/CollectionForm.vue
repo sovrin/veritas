@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Collection, Field, FieldType } from '../../shared/contracts'
-import { FIELD_TYPES, fieldKey, slugify } from '../../shared/contracts'
+import { FIELD_NEEDS, FIELD_TYPES, fieldKey, slugify } from '../../shared/contracts'
 import { FIELD_META } from '../lib/fields'
 
 /** Adds a collection to a project, or changes one: its name and fields. A saved field keeps its key
@@ -23,7 +23,13 @@ interface Row extends Field {
 const rows = ref<Row[]>(
   props.collection?.fields.map((field) => ({ ...field, saved: true, keyTouched: true })) ?? [],
 )
-const types = Object.keys(FIELD_TYPES) as FieldType[]
+// A type that needs files is offered while a module provides them; a saved field shows its own.
+const files = useCapability('files')
+const types = computed(() =>
+  (Object.keys(FIELD_TYPES) as FieldType[]).filter(
+    (type) => FIELD_NEEDS[type] !== 'files' || files.value,
+  ),
+)
 // Focus follows the change: into the new field's label, or, after a removal, to "Add a field".
 const addButton = ref<HTMLButtonElement>()
 async function addField() {
@@ -146,7 +152,7 @@ async function save() {
                   data-size="s"
                   :disabled="row.saved"
                 >
-                  <option v-for="type in types" :key="type" :value="type">
+                  <option v-for="type in row.saved ? [row.type] : types" :key="type" :value="type">
                     {{ FIELD_TYPES[type] }}
                   </option>
                 </select>

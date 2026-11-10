@@ -1,6 +1,14 @@
 <script setup lang="ts">
+import type { StoredFile } from '#nexitas/shared/capabilities'
 import type { Collection, Entry } from '../../shared/contracts'
-import { coerce, deliver, emptyValue, slugify } from '../../shared/contracts'
+import {
+  FIELD_NEEDS,
+  coerce,
+  deliver,
+  deliveredFile,
+  emptyValue,
+  slugify,
+} from '../../shared/contracts'
 import { deliveryPath } from '../lib/fields'
 
 /** Writes a new entry, or edits `entry`. The form follows the collection's fields; under it stands
@@ -25,6 +33,14 @@ const values = reactive<Record<string, unknown>>(
     }),
   ),
 )
+// File fields use whichever module provides files: its picker, and the files it picked, for the
+// preview below.
+const filesOn = useCapability('files')
+const origin = useRequestURL().origin
+const picked = reactive<Record<string, StoredFile>>({})
+const pick = (file: StoredFile | null) => {
+  if (file) picked[file.id] = file
+}
 const delivered = computed(() =>
   JSON.stringify(
     deliver(
@@ -36,6 +52,7 @@ const delivered = computed(() =>
         updatedAt: props.entry?.updatedAt ?? Date.now(),
       },
       props.collection,
+      (id) => (picked[id] ? deliveredFile(origin, picked[id]) : null),
     ),
     null,
     2,
@@ -115,6 +132,20 @@ async function save() {
               class="input font-mono text-s"
               rows="10"
             ></textarea>
+            <template v-else-if="FIELD_NEEDS[field.type] === 'files'">
+              <component
+                :is="'FilesPicker'"
+                v-if="filesOn"
+                :id="`field-${field.key}`"
+                v-model="values[field.key]"
+                :accept="field.type === 'image' ? 'image' : undefined"
+                @picked="pick"
+              />
+              <small v-else class="text-muted"
+                >Needs a module that provides files. Until one is on, the entry keeps what it has
+                here.</small
+              >
+            </template>
             <input
               v-else-if="field.type === 'number'"
               :id="`field-${field.key}`"

@@ -198,4 +198,42 @@ describe('rules', () => {
     expect(slugify('Hello, Wörld!')).toBe('hello-world')
     expect(fieldKey('Hero image')).toBe('heroImage')
   })
+
+  it('store a file field as an id, and deliver the file it finds, or null', () => {
+    const team: Collection = {
+      slug: 'team',
+      name: 'Team',
+      fields: [
+        { key: 'photo', label: 'Photo', type: 'image' },
+        { key: 'cv', label: 'CV', type: 'file' },
+      ],
+    }
+    expect(readFields(team, { photo: 'abc_123', cv: '' })).toEqual({
+      fields: { photo: 'abc_123', cv: null },
+    })
+    expect(readFields(team, { photo: '../etc/passwd' })).toEqual({
+      issues: [{ path: 'fields.photo', message: 'Enter an image.' }],
+    })
+    const entry = {
+      slug: 'ada',
+      title: 'Ada',
+      fields: { photo: 'abc_123', cv: 'gone' },
+      published: true,
+      updatedAt: 0,
+    }
+    const photo = {
+      url: 'https://x/v1/files/p/abc_123',
+      name: 'ada.png',
+      type: 'image/png',
+      size: 9,
+      width: 2,
+      height: 1,
+    }
+    expect(deliver(entry, team, (id) => (id === 'abc_123' ? photo : null))).toMatchObject({
+      photo,
+      cv: null,
+    })
+    // Nothing provides files: the fields stay, empty.
+    expect(deliver(entry, team)).toMatchObject({ photo: null, cv: null })
+  })
 })

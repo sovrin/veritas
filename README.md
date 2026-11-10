@@ -30,13 +30,20 @@ owner         ── /p/<project>/content                           collections,
 
 ### Field types
 
-| Type     | Delivered as                                        |
-| -------- | --------------------------------------------------- |
-| Text     | string                                              |
-| Markdown | string, as written; rendering is the consumer's job |
-| Number   | number or `null`                                    |
-| Yes / no | boolean                                             |
-| Date     | `"YYYY-MM-DD"` or `""`                              |
+| Type     | Delivered as                                         |
+| -------- | ---------------------------------------------------- |
+| Text     | string                                               |
+| Markdown | string, as written; rendering is the consumer's job  |
+| Number   | number or `null`                                     |
+| Yes / no | boolean                                              |
+| Date     | `"YYYY-MM-DD"` or `""`                               |
+| Image    | `{ url, name, type, size, width, height }` or `null` |
+| File     | `{ url, name, type, size, width, height }` or `null` |
+
+Image and File fields hold one of the project's files, from a module that provides files (such as
+[repositas](https://github.com/sovrin/repositas)); they are offered only while one is switched on.
+`url` is the file's public address; `width` and `height` are its pixels, `null` for a document.
+Without such a module, or once the file is deleted, the field delivers `null`.
 
 A field's key (camelCase, like `heroImage`) is the name the API uses. Key and type are fixed once
 saved, so stored values always match what the API promises. Removing a field stops it being

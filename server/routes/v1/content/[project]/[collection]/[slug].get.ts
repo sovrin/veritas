@@ -1,5 +1,5 @@
 import { deliver } from '../../../../../../shared/contracts'
-import { requireToken, routeCollection, routeEntry } from '../../../../../utils/veritas'
+import { fileReader, requireToken, routeCollection, routeEntry } from '../../../../../utils/veritas'
 
 /** One published entry. A draft is a 404, as if it were not there. */
 export default defineEventHandler((event) => {
@@ -8,5 +8,5 @@ export default defineEventHandler((event) => {
   const entry = routeEntry(event, project.id, collection.slug)
   if (!entry.published)
     throw createError({ statusCode: 404, statusMessage: 'There is no such entry.' })
-  return deliver(entry, collection)
+  return deliver(entry, collection, fileReader(project.id))
 })
