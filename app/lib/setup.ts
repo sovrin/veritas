@@ -1,4 +1,4 @@
-import type { ContentSpace } from '../../shared/contracts'
+import type { ContentSpace } from '#self/shared/contracts'
 import { deliverySnippet } from './fields'
 
 /** The content's setup, for the Setup inspector on its first page: the request its sites read it

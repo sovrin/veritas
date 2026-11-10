@@ -11,8 +11,9 @@ Conventions for working on veritas, in code and in the interface.
   veritas needs, here.
 - A project's content belongs to one nexitas project: its delivery token, its collections, their
   entries. It is started and set up (the token, the API) on its Content page.
-- Import by relative path (or `#nexitas/...`): `~` and `#shared` resolve against nexitas, the app
-  around this layer. Nothing app-wide lives here: no name, logo, favicon or sign-in lines.
+- Import your own files through `#self/...` and the core through `#nexitas/...`: `~` and `#shared`
+  resolve against nexitas, the app around this layer. Nothing app-wide lives here: no name, logo,
+  favicon or sign-in lines.
 - Keep comprehension debt low: explicit control flow, small modules, framework conventions, no
   speculative abstractions. Comments say why, not what.
 - Every rule about input lives once, in `shared/contracts.ts` (zod), and is checked at runtime on

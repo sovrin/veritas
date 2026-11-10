@@ -1,7 +1,7 @@
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { deliver, selectFields } from '../../../../../../shared/contracts'
-import { listEntries } from '../../../../../core/content'
-import { fileReader, requireToken, routeCollection } from '../../../../../utils/veritas'
+import { deliver, selectFields } from '#self/shared/contracts'
+import { listEntries } from '#self/server/core/content'
+import { fileReader, requireToken, routeCollection } from '#self/server/utils/veritas'
 
 /** Published entries of one collection, newest first; `?fields=title,date` delivers only those. */
 export default defineEventHandler((event) => {

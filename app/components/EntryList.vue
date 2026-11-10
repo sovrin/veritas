@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { formatAge, plural } from '#nexitas/app/lib/format'
-import type { Collection, EntrySummary } from '../../shared/contracts'
-import { deliveryPath } from '../lib/fields'
-import { useContentSetup } from '../lib/setup'
+import type { Collection, EntrySummary } from '#self/shared/contracts'
+import { deliveryPath } from '#self/app/lib/fields'
+import { useContentSetup } from '#self/app/lib/setup'
 
 /** <EntryList :selected="slug" :aside-name="slug" aside-mono><template #aside>…</template></EntryList>
  *  The content's page, one collection at a time: the project's collections as a switch, the

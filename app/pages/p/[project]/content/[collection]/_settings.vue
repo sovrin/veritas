@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Collection } from '../../../../../../shared/contracts'
+import type { Collection } from '#self/shared/contracts'
 
 // A collection's name and fields, and deleting it.
 const route = useRoute()

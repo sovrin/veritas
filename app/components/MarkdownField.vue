@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { StoredFile } from '#nexitas/shared/capabilities'
-import { deliveredFile } from '../../shared/contracts'
-import type { MarkdownEdit } from '../lib/markdown'
-import { image, link, pasteUrl, prefixLines, renderPreview, wrap } from '../lib/markdown'
+import { deliveredFile } from '#self/shared/contracts'
+import type { MarkdownEdit } from '#self/app/lib/markdown'
+import { image, link, pasteUrl, prefixLines, renderPreview, wrap } from '#self/app/lib/markdown'
 
 /** A Markdown field: the textarea, a toolbar that writes the Markdown for you, and a preview. */
 const props = defineProps<{ id: string }>()

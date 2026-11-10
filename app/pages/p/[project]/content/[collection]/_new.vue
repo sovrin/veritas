@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { errorMessage } from '#nexitas/app/lib/format'
-import type { Collection, Entry } from '../../../../../../shared/contracts'
-import EntryList from '../../../../../components/EntryList.vue'
+import type { Collection, Entry } from '#self/shared/contracts'
+import EntryList from '#self/app/components/EntryList.vue'
 
 // A new entry, written in the inspector beside the collection's entries.
 const route = useRoute()

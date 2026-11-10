@@ -1,4 +1,4 @@
-import type { FieldType } from '../../shared/contracts'
+import type { FieldType } from '#self/shared/contracts'
 
 /** How each field type shows up in the admin: its icon, and one line on what it is for. */
 export const FIELD_META: Record<FieldType, { icon: string; hint: string }> = {
