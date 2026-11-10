@@ -1,7 +1,7 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { deleteEntry } from '../../../../../../../../core/content'
-import { routeCollection, routeEntry, projectSpace } from '../../../../../../../../utils/veritas'
+import { deleteEntry } from '#self/server/core/content'
+import { routeCollection, routeEntry, projectSpace } from '#self/server/utils/veritas'
 
 export default defineEventHandler((event) => {
   const { project } = projectSpace(event)

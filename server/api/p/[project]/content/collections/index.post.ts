@@ -1,9 +1,9 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { invalid } from '#nexitas/server/utils/invalid'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { newCollectionSchema } from '../../../../../../shared/contracts'
-import { createCollection } from '../../../../../core/content'
-import { projectSpace, unavailableFields } from '../../../../../utils/veritas'
+import { newCollectionSchema } from '#self/shared/contracts'
+import { createCollection } from '#self/server/core/content'
+import { projectSpace, unavailableFields } from '#self/server/utils/veritas'
 
 export default defineEventHandler(async (event) => {
   const { project } = projectSpace(event)

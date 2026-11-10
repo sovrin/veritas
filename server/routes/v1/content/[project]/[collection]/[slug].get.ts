@@ -1,5 +1,5 @@
-import { deliver } from '../../../../../../shared/contracts'
-import { fileReader, requireToken, routeCollection, routeEntry } from '../../../../../utils/veritas'
+import { deliver } from '#self/shared/contracts'
+import { fileReader, requireToken, routeCollection, routeEntry } from '#self/server/utils/veritas'
 
 /** One published entry. A draft is a 404, as if it were not there. */
 export default defineEventHandler((event) => {

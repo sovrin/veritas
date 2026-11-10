@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StoredFile } from '#nexitas/shared/capabilities'
-import type { Collection, Entry } from '../../shared/contracts'
+import type { Collection, Entry } from '#self/shared/contracts'
 import {
   FIELD_NEEDS,
   coerce,
@@ -9,8 +9,8 @@ import {
   emptyValue,
   slugify,
   splitList,
-} from '../../shared/contracts'
-import { deliveryPath } from '../lib/fields'
+} from '#self/shared/contracts'
+import { deliveryPath } from '#self/app/lib/fields'
 
 /** Writes a new entry, or edits `entry`. The form follows the collection's fields; under it stands
  *  what the API delivers for it, since a headless CMS has no page to preview. */

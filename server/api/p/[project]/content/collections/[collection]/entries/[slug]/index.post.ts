@@ -1,14 +1,9 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { invalid } from '#nexitas/server/utils/invalid'
 import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
-import { entryInputSchema, readFields } from '../../../../../../../../../shared/contracts'
-import { getEntry, updateEntry } from '../../../../../../../../core/content'
-import {
-  checkFiles,
-  routeCollection,
-  routeEntry,
-  projectSpace,
-} from '../../../../../../../../utils/veritas'
+import { entryInputSchema, readFields } from '#self/shared/contracts'
+import { getEntry, updateEntry } from '#self/server/core/content'
+import { checkFiles, routeCollection, routeEntry, projectSpace } from '#self/server/utils/veritas'
 
 /** A new title, values and status. The slug stays: the API addresses the entry by it. */
 export default defineEventHandler(async (event) => {

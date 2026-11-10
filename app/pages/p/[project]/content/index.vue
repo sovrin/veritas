@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useContentSetup } from '../../../../lib/setup'
+import { useContentSetup } from '#self/app/lib/setup'
 
 // A project's content opens on its first collection: the collections are a switch on that page,
 // not a level of their own. Here only what comes before one: content not started (started here),

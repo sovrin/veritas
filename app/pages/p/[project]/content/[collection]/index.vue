@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import EntryList from '../../../../../components/EntryList.vue'
+import EntryList from '#self/app/components/EntryList.vue'
 </script>
 
 <template>

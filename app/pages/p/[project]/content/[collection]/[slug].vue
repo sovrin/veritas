@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { errorMessage, formatTime } from '#nexitas/app/lib/format'
-import type { Collection, Entry } from '../../../../../../shared/contracts'
-import EntryList from '../../../../../components/EntryList.vue'
+import type { Collection, Entry } from '#self/shared/contracts'
+import EntryList from '#self/app/components/EntryList.vue'
 
 // One entry, opened beside the collection's entries: its form, what the API delivers for it, and
 // deleting it at the inspector's foot.
