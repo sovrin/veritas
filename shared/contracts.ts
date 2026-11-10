@@ -190,21 +190,39 @@ export const deliveredFile = (origin: string, file: StoredFile): DeliveredFile =
   height: file.height,
 })
 
-/** An entry as the API delivers it: flat, with exactly the collection's current fields. A file
- *  field holds an id; `file` finds what it delivers, null when the file is gone or nothing provides
- *  files. */
+/** An entry as the API delivers it: flat, with exactly the collection's current fields, or only the
+ *  keys in `only`. A file field holds an id; `file` finds what it delivers, null when the file is
+ *  gone or nothing provides files. */
 export function deliver(
   entry: Entry,
   collection: Pick<Collection, 'fields'>,
   file: (id: string) => DeliveredFile | null = () => null,
+  only: Set<string> | null = null,
 ) {
-  const out: Record<string, unknown> = { slug: entry.slug, title: entry.title }
+  const wanted = (key: string) => !only || only.has(key)
+  const out: Record<string, unknown> = { slug: entry.slug }
+  if (wanted('title')) out.title = entry.title
   for (const field of collection.fields) {
+    if (!wanted(field.key)) continue
     const value = entry.fields[field.key] ?? emptyValue(field.type)
     out[field.key] = FIELD_NEEDS[field.type] === 'files' ? value && file(value as string) : value
   }
-  out.updatedAt = new Date(entry.updatedAt).toISOString()
+  if (wanted('updatedAt')) out.updatedAt = new Date(entry.updatedAt).toISOString()
   return out
+}
+
+/** The keys a `?fields=a,b` query asks for (null: all of them), and the names in it the collection
+ *  doesn't deliver. The slug always comes along: it is the entry's address. */
+export function selectFields(query: string, collection: Pick<Collection, 'fields'>) {
+  const names = query
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean)
+  const known = new Set(['slug', 'title', 'updatedAt', ...collection.fields.map(({ key }) => key)])
+  return {
+    only: names.length ? new Set(names) : null,
+    unknown: names.filter((name) => !known.has(name)),
+  }
 }
 
 /** A collection on the admin's lists: its entries counted, all and published. */

@@ -11,6 +11,7 @@ import {
   fieldKey,
   newCollectionSchema,
   readFields,
+  selectFields,
   slugify,
   type Collection,
 } from '../../shared/contracts'
@@ -58,6 +59,25 @@ const posts: Collection = {
 }
 
 describe('content', () => {
+  it('delivers only the fields a list asks for, the slug always, and names the unknown ones', () => {
+    const entry = {
+      slug: 'hello',
+      title: 'Hello',
+      fields: { body: '# Hi', publishedOn: '2026-10-21', featured: true },
+      published: true,
+      updatedAt: 0,
+    }
+    const { only, unknown } = selectFields('title, publishedOn,,', posts)
+    expect(unknown).toEqual([])
+    expect(deliver(entry, posts, undefined, only)).toEqual({
+      slug: 'hello',
+      title: 'Hello',
+      publishedOn: '2026-10-21',
+    })
+    expect(selectFields('', posts).only).toBeNull()
+    expect(selectFields('title,tilte', posts).unknown).toEqual(['tilte'])
+  })
+
   it('starts once per project, with a token that can be replaced', () => {
     const db = database()
     expect(createSpace(db, 'sonotas')).toBe(true)

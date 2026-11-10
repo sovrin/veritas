@@ -59,11 +59,11 @@ Setup shows (and can replace). Any origin may call it.
 curl -H "Authorization: Bearer $TOKEN" https://nexitas.example.com/v1/content/<project>/<collection>
 ```
 
-| Request                                      | Returns                                                                           |
-| -------------------------------------------- | --------------------------------------------------------------------------------- |
-| `GET /v1/content/:project`                   | `{ slug, name, collections: [{ slug, name, fields: [{ key, type }], entries }] }` |
-| `GET /v1/content/:project/:collection`       | Published entries, newest first                                                   |
-| `GET /v1/content/:project/:collection/:slug` | One entry                                                                         |
+| Request                                      | Returns                                                                                  |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `GET /v1/content/:project`                   | `{ slug, name, collections: [{ slug, name, fields: [{ key, type }], entries }] }`        |
+| `GET /v1/content/:project/:collection`       | Published entries, newest first; `?fields=title,date` delivers only those (and the slug) |
+| `GET /v1/content/:project/:collection/:slug` | One entry                                                                                |
 
 The project lists only collections with at least one published entry.
 
