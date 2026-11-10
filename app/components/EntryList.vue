@@ -7,8 +7,8 @@ import { useContentSetup } from '../lib/setup'
 /** <EntryList :selected="slug" :aside-name="slug" aside-mono><template #aside>…</template></EntryList>
  *  The content's page, one collection at a time: the project's collections as a switch, the
  *  collection's entries in the pane, their filter, search and page in the address. An entry's page
- *  renders it too, with `selected` marking its row and the entry in `aside` (the inspector), so
- *  writing entries never leaves the list. With no entry open, Setup opens the inspector on how sites
+ *  renders it too, with `selected` marking its row and the entry in `aside`, a dialog over the list
+ *  (an entry's form is too wide for the inspector), so writing entries never leaves the list. With no entry open, Setup opens the inspector on how sites
  *  read the content. */
 defineProps<{ selected?: string; asideName?: string; asideMono?: boolean; asideTitle?: string }>()
 const slots = defineSlots<{ aside?: () => unknown; danger?: () => unknown }>()
@@ -107,6 +107,7 @@ const headline = computed(() => {
     :aside-title="slots.aside ? asideTitle : 'Setup'"
     :aside-name="asideName"
     :aside-mono="asideMono"
+    :aside-as="slots.aside ? 'dialog' : undefined"
     :aside-close="
       slots.aside
         ? { path: `/p/${project}/content/${slug}`, query: route.query }
