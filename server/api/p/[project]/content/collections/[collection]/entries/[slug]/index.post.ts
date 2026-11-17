@@ -1,6 +1,6 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { invalid } from '#nexitas/server/utils/invalid'
-import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
+import { capability, nexitasDatabase } from '#nexitas/server/utils/nexitas'
 import { entryInputSchema, readFields } from '#self/shared/contracts'
 import { getEntry, updateEntry } from '#self/server/core/content'
 import { checkFiles, routeCollection, routeEntry, projectSpace } from '#self/server/utils/veritas'
@@ -14,9 +14,16 @@ export default defineEventHandler(async (event) => {
   if (!body.success) throw invalid(body.error)
   const read = readFields(collection, body.data.fields)
   if ('issues' in read) throw invalid(read.issues)
-  const fileIssues = checkFiles(project.id, collection, read.fields, entry.fields)
-  if (fileIssues.length) throw invalid(fileIssues)
   const db = nexitasDatabase()
+  const fileIssues = checkFiles(
+    db,
+    capability('files'),
+    project.id,
+    collection,
+    read.fields,
+    entry.fields,
+  )
+  if (fileIssues.length) throw invalid(fileIssues)
   updateEntry(db, project.id, collection.slug, {
     ...body.data,
     slug: entry.slug,

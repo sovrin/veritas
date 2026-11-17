@@ -16,6 +16,9 @@ export const FIELD_META: Record<FieldType, { icon: string; hint: string }> = {
 export const deliveryPath = (projectId: string, ...slugs: string[]) =>
   ['/v1/content', projectId, ...slugs].join('/')
 
+/** Where an assistant edits a project's content over MCP. */
+export const mcpPath = (projectId: string) => `/v1/mcp/content/${projectId}`
+
 /** The request a site reads a project's content with, for its Setup. */
 export const deliverySnippet = (origin: string, projectId: string, token: string) =>
   `curl -H "Authorization: Bearer ${token}" ${origin}${deliveryPath(projectId)}`

@@ -9,6 +9,9 @@ export const isSlug = (value: unknown): value is string =>
   typeof value === 'string' && SLUG.test(value)
 export const slugSchema = z.string().regex(SLUG, 'Use a–z, 0–9 and dashes, not at either end.')
 
+/** Whether assistants may edit the content over MCP: on gives a new token, off drops it. */
+export const mcpAccessSchema = z.object({ on: z.boolean() }).strict()
+
 /** "Hello, World!" → "hello-world" */
 export function slugify(text: string) {
   return text
@@ -256,5 +259,7 @@ export interface ContentSpace {
   projectId: string
   name: string
   token: string
+  /** What an assistant edits the content with over MCP; null while that is off. */
+  mcpToken: string | null
   collections: CollectionSummary[]
 }

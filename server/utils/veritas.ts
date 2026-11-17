@@ -1,4 +1,6 @@
 import type { H3Event } from 'h3'
+import type { DatabaseSync } from 'node:sqlite'
+import type { Capabilities } from '#nexitas/shared/capabilities'
 import { createLimiter } from '#nexitas/server/core/limits'
 import { getProject } from '#nexitas/server/core/projects'
 import {
@@ -32,7 +34,7 @@ export function projectSpace(event: H3Event) {
   const project = requestProject(event)
   const space = getSpace(nexitasDatabase(), project.id)
   if (!space) throw createError({ statusCode: 404, statusMessage: 'This project has no content.' })
-  return { project, token: space.token }
+  return { project, token: space.token, mcpToken: space.mcpToken }
 }
 
 export function routeCollection(event: H3Event, projectId: string) {
@@ -75,31 +77,38 @@ export function fileReader(projectId: string) {
 }
 
 /** Checks an entry's file fields: a file must be one of the project's own. While nothing provides
- *  files, nothing can check a new value, so a file field keeps what it held (`before`). */
+ *  files, nothing can check a new value, so a file field keeps what it held (`before`). `files` is
+ *  capability('files'), given so the MCP tools' tests can run without the app. */
 export function checkFiles(
+  db: DatabaseSync,
+  files: Capabilities['files'] | undefined,
   projectId: string,
   collection: Pick<Collection, 'fields'>,
   fields: Record<string, unknown>,
   before: Record<string, unknown> = {},
 ) {
-  const files = capability('files')
   const issues: { path: string; message: string }[] = []
   for (const field of collection.fields) {
     if (FIELD_NEEDS[field.type] !== 'files') continue
     const id = fields[field.key]
     if (!files) fields[field.key] = before[field.key] ?? null
-    else if (typeof id === 'string' && !files.get(nexitasDatabase(), projectId, id))
+    else if (typeof id === 'string' && !files.get(db, projectId, id))
       issues.push({ path: `fields.${field.key}`, message: "Pick one of this project's files." })
   }
   return issues
 }
 
-/** New fields of a type whose capability no switched-on module provides. A saved field stays. */
-export function unavailableFields(fields: Field[], before?: Pick<Collection, 'fields'>) {
+/** New fields of a type whose capability no switched-on module provides (`provided`, by name). A
+ *  saved field stays. */
+export function unavailableFields(
+  provided: Partial<Capabilities>,
+  fields: Field[],
+  before?: Pick<Collection, 'fields'>,
+) {
   const saved = new Set(before?.fields.map((field) => field.key))
   return fields.flatMap((field, index) => {
     const needs = FIELD_NEEDS[field.type]
-    if (!needs || saved.has(field.key) || capability(needs)) return []
+    if (!needs || saved.has(field.key) || provided[needs]) return []
     return [
       {
         path: `fields.${index}.type`,

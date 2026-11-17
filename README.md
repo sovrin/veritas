@@ -97,12 +97,39 @@ collections and entries are not found there.
 | ------------------------------------------------------------ | --------------------------------------------------------- |
 | `GET · POST /`                                               | Its token and collections, `404` before it starts · start |
 | `POST /token`                                                | Replace the token                                         |
+| `POST /mcp`                                                  | Assistant access `{ on }`: a new MCP token, or none       |
 | `POST /collections`                                          | Add one `{ slug, name, fields: [{ key, label, type }] }`  |
 | `GET · POST /collections/:collection` · `POST …/delete`      | Read with entries · replace name and fields · delete      |
 | `POST /collections/:collection/entries`                      | Add one `{ slug, title, fields, published }`              |
 | `GET · POST …/entries/:slug` · `POST …/entries/:slug/delete` | Read · replace `{ title, fields, published }` · delete    |
 
 Deleting a project in nexitas deletes its content with it.
+
+## Assistants (MCP)
+
+An assistant such as Claude Code can make collections and write entries over the
+[Model Context Protocol](https://modelcontextprotocol.io). It is off until the owner turns it on
+under Setup on the Content page, which gives a token of its own (`vtm_…`): the read token sits in
+sites and builds and never writes. Turning it off, or on again, makes the old token stop working at
+once.
+
+```sh
+claude mcp add --transport http veritas https://nexitas.example.com/v1/mcp/content/<project> \
+  --header "Authorization: Bearer <MCP token>"
+```
+
+| Tool                | Does                                                                              |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `list_collections`  | Every collection with its fields and its entries counted                          |
+| `list_entries`      | A collection's fields and entries, newest first; `state`, and `fields` for values |
+| `get_entry`         | One entry with its values                                                         |
+| `create_collection` | Add one `{ slug, name, fields }`                                                  |
+| `update_collection` | Replace its name and fields; a field left out goes, with its values               |
+| `save_entries`      | Create entries (as drafts) or change them, up to 100 at a time, all or none       |
+| `delete_entries`    | Delete entries, up to 100 at a time (they cannot come back)                       |
+
+Publishing and deleting a collection stay the owner's. An entry the assistant changes keeps whether
+it is published, so a change to a published one shows on sites at once.
 
 ## Develop
 
