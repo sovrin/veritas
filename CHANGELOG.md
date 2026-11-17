@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/sovrin/veritas/compare/v0.2.0...v0.2.1) (2026-11-17)
+
+
+### Features
+
+* **mcp:** assistants edit the content over MCP ([b5e58b1](https://github.com/sovrin/veritas/commit/b5e58b1fcd1d0eb0f2c28c03bb9ff21de05afe5a))
+* **mcp:** assistants edit the content over MCP ([1f04f22](https://github.com/sovrin/veritas/commit/1f04f224707395882477873cf07a2601752f391d))
+
 ## [0.2.0](https://github.com/sovrin/veritas/compare/v0.1.0...v0.2.0) (2026-11-10)
 
 
