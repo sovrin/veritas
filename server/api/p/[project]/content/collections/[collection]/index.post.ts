@@ -1,6 +1,6 @@
 import { announceChange } from '#nexitas/server/utils/changes'
 import { invalid } from '#nexitas/server/utils/invalid'
-import { nexitasDatabase } from '#nexitas/server/utils/nexitas'
+import { capability, nexitasDatabase } from '#nexitas/server/utils/nexitas'
 import { collectionSettingsSchema } from '#self/shared/contracts'
 import { changedTypes, getCollection, updateCollection } from '#self/server/core/content'
 import { routeCollection, projectSpace, unavailableFields } from '#self/server/utils/veritas'
@@ -19,7 +19,11 @@ export default defineEventHandler(async (event) => {
         message: `"${field.key}" keeps its type once saved. Add a field with a new key instead.`,
       })),
     )
-  const unavailable = unavailableFields(body.data.fields, collection)
+  const unavailable = unavailableFields(
+    { files: capability('files') },
+    body.data.fields,
+    collection,
+  )
   if (unavailable.length) throw invalid(unavailable)
   const db = nexitasDatabase()
   updateCollection(db, project.id, collection.slug, body.data)

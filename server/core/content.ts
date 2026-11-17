@@ -17,8 +17,12 @@ import type {
 export function getSpace(db: DatabaseSync, projectId: string) {
   return (
     (db
-      .prepare('SELECT project_id, token FROM content_projects WHERE project_id = ?')
-      .get(projectId) as { project_id: string; token: string } | undefined) ?? null
+      .prepare(
+        'SELECT project_id, token, mcp_token AS mcpToken FROM content_projects WHERE project_id = ?',
+      )
+      .get(projectId) as
+      | { project_id: string; token: string; mcpToken: string | null }
+      | undefined) ?? null
   )
 }
 
@@ -37,6 +41,15 @@ export function createSpace(db: DatabaseSync, projectId: string, now = Date.now(
 export function rotateToken(db: DatabaseSync, projectId: string) {
   db.prepare('UPDATE content_projects SET token = ? WHERE project_id = ?').run(
     newToken('vt_'),
+    projectId,
+  )
+}
+
+/** Turns assistants' access over MCP on with a new token, or off; the old token stops working at
+ *  once. Its own token: the read token sits in sites and builds, and must never write. */
+export function setMcpAccess(db: DatabaseSync, projectId: string, on: boolean) {
+  db.prepare('UPDATE content_projects SET mcp_token = ? WHERE project_id = ?').run(
+    on ? newToken('vtm_') : null,
     projectId,
   )
 }

@@ -47,10 +47,13 @@ async function start() {
     </EmptyState>
 
     <template v-if="space && setup.open.value" #aside>
-      <p class="text-s text-muted">
-        Read-only, published entries only, from any origin. Every request needs the token.
-      </p>
-      <EmbedCode :code="snippet" />
+      <AppSection title="Sites">
+        <p class="text-s text-muted">
+          Read-only, published entries only, from any origin. Every request needs the token.
+        </p>
+        <EmbedCode :code="snippet" />
+      </AppSection>
+      <AssistantAccess :token="space.mcpToken" :refresh="refresh" />
     </template>
     <template v-if="space && setup.open.value" #danger>
       <span>Replaces the token; whatever reads with the old one gets a 401.</span>

@@ -36,7 +36,15 @@ const {
 
 // The project's collections for the switch, and its setup (the token sites read it with), which
 // the inspector shows on demand while no entry is open.
-const { space, snippet, rotate, rotating, rotateError, rotated } = await useContentSetup()
+const {
+  space,
+  refresh: refreshSpace,
+  snippet,
+  rotate,
+  rotating,
+  rotateError,
+  rotated,
+} = await useContentSetup()
 const setup = useSetup()
 const setupOpen = computed(() => !slots.aside && setup.open.value)
 
@@ -233,10 +241,13 @@ const headline = computed(() => {
 
     <template v-if="slots.aside" #aside><slot name="aside" /></template>
     <template v-else-if="space && setupOpen" #aside>
-      <p class="text-s text-muted">
-        Read-only, published entries only, from any origin. Every request needs the token.
-      </p>
-      <EmbedCode :code="snippet" />
+      <AppSection title="Sites">
+        <p class="text-s text-muted">
+          Read-only, published entries only, from any origin. Every request needs the token.
+        </p>
+        <EmbedCode :code="snippet" />
+      </AppSection>
+      <AssistantAccess :token="space.mcpToken" :refresh="refreshSpace" />
     </template>
     <template v-if="slots.danger" #danger><slot name="danger" /></template>
     <template v-else-if="space && setupOpen" #danger>

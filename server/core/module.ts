@@ -29,9 +29,24 @@ export const veritas: NexitasModule = {
       FOREIGN KEY (project_id, collection) REFERENCES collections(project_id, slug) ON DELETE CASCADE
     ) WITHOUT ROWID;
     CREATE INDEX entries_newest ON entries(project_id, collection, updated_at);`,
+    // An assistant may edit the content over MCP once the owner gives it a token of its own: the
+    // read token sits in sites and builds, and must never write.
+    `ALTER TABLE content_projects ADD COLUMN mcp_token TEXT;`,
   ],
   // Read by sites, apps and build steps anywhere, with the project's token instead of a cookie.
   publicRoutes: [
+    // An assistant's MCP client (Claude Code, an editor), never a page: it sends no Origin, and
+    // one that does is a browser that was led here. Outside /v1/content/<project>/, where any
+    // slug, even "mcp", is a collection's.
+    {
+      path: /^\/v1\/mcp\/content\/([a-z0-9-]+)$/,
+      json: true,
+      maxBody: 1024 * 1024,
+      guard: (event) => {
+        if (getHeader(event, 'origin'))
+          throw createError({ statusCode: 403, statusMessage: 'MCP is not for pages.' })
+      },
+    },
     {
       path: /^\/v1\/content\/([a-z0-9-]+)(?:\/[a-z0-9-]+){0,2}$/,
       json: true,
@@ -39,7 +54,7 @@ export const veritas: NexitasModule = {
     },
   ],
   // Everything veritas serves; switched off, all of it answers 404.
-  paths: ['/content', '/api/content', '/v1/content'],
+  paths: ['/content', '/api/content', '/v1/content', '/v1/mcp/content'],
   // An entry is mostly text; a long one can pass 64 kB.
   maxBody: 1024 * 1024,
   projectStatus: (db, projectId) => {
